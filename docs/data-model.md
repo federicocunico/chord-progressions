@@ -15,6 +15,19 @@
 - `/BASSO` (numero arabo con alterazione opzionale): basso sul grado della tonalità, es. `I/3` = Do/Mi in Do,
   `V/7` = Sol/Si, `i/b7` = Lam/Sol.
 
+## Accordi nei testi
+
+Nei testi (`description`, `tips`, spiegazioni) ogni accordo citato va **marcato** con un numerale romano,
+che viene risolto nella tonalità in cui il testo è mostrato e ottiene il diagramma al mouseover:
+
+- `[V7/vi]` mostra il numerale (`V7/vi`);
+- `{V7/vi}` mostra il simbolo nella tonalità e notazione scelte (`E7` in Do, `Mi7` in notazione latina).
+
+Esempio: `'Il [V] non va al [I] ma scende al [IV]: in Do, {V} → {IV}.'`.
+Il testo non marcato resta testo: note di basso ("il basso scende Do–Si–La"), tonalità ("giro di Do"),
+nomi di qualità ("add9"). I test (`tests/chordtext.test.ts`) falliscono se una marcatura non è un numerale
+valido o se nei dati resta un numerale romano non marcato (tranne "I"/"i" da soli, che sono anche articoli).
+
 ## Progressione (`src/data/progressions.ts`)
 
 ```ts

@@ -1,7 +1,7 @@
 import { h, field, segmented } from '../dom';
 import { tonicSelect, modeControl, genreSelect, styleSelect, patternSelect, bpmControl, instrumentSelect, midiOutControl } from '../components/controls';
 import { analyzeAll, pill, playButton, midiButton, progressionCard, stars, legend, type ChordItem } from '../components/progression';
-import { tip, chordRef } from '../components/chordTip';
+import { tip, chordRef, richText } from '../components/chordTip';
 import { chordDiagram, circleOfFifths, fretboard, tensionCurve } from '../components/diagrams';
 import { settings, updateSettings, styleFor, patternFor, instrumentFor, context, updateContext } from '../state';
 import { PROGRESSION_MAP } from '../../data/progressions';
@@ -99,7 +99,7 @@ export function detailView(route: Route): HTMLElement {
         h('span', { class: 'badge' }, MODES[mode].name),
         h('a', { class: 'badge genre', href: href('generi/' + genre), style: { '--hue': String(g.hue) } }, g.name),
         ...(def?.mood ?? []).map((m) => h('span', { class: 'tag' }, m))),
-      def ? h('p', { class: 'lead' }, def.description) : match ? h('p', { class: 'lead' }, match.description) : null,
+      def ? h('p', { class: 'lead' }, richText(def.description, k)) : match ? h('p', { class: 'lead' }, richText(match.description, k)) : null,
       def?.examples?.length ? h('p', { class: 'examples' }, h('strong', null, 'Ascoltala in: '), def.examples.join(' · ')) : null,
       modified ? h('button', { type: 'button', class: 'btn', onclick: () => setChords(original.slice(), originalBars.slice()) }, '↺ Ripristina l\'originale') : null);
 
@@ -136,7 +136,7 @@ export function detailView(route: Route): HTMLElement {
           h('span', { class: 'step' }, String(i + 1)),
           h('div', null, h('h3', null, tip(h('span', { class: 'chord-ref', tabindex: '0' }, shownSym), it.chord, v)), h('span', { class: 'num' }, prettyRoman(it.rc))),
           bars[i] !== 1 ? h('span', { class: 'badge' }, `${bars[i]} batt.`) : null),
-        h('p', { class: 'fn-label' }, it.analysis.label),
+        h('p', { class: 'fn-label' }, richText(it.analysis.label, k)),
         h('button', { type: 'button', class: 'diagram-btn', title: 'Ascolta questo accordo', onclick: () => void player.preview(voicingMidi(v), instrument) },
           tip(chordDiagram(v, { rootPc: it.rootPc, title: it.symbol, flats }), it.chord, v)),
         h('p', { class: 'voicing-label' }, v.label),
@@ -161,7 +161,7 @@ export function detailView(route: Route): HTMLElement {
       const m = describeMove(it.rc, next.rc, k);
       return h('li', null,
         h('div', { class: 'move-pills' }, pill(it, { small: true }), h('span', { class: 'arrow' }, '→'), pill(next, { small: true })),
-        h('div', null, h('strong', null, m.title), h('p', null, m.text)),
+        h('div', null, h('strong', null, richText(m.title, k)), h('p', null, richText(m.text, k))),
         i === items.length - 1 ? h('span', { class: 'badge' }, 'ritorno all\'inizio') : null);
     });
     const fam = (it: ChordItem) => {
@@ -220,8 +220,8 @@ export function detailView(route: Route): HTMLElement {
     const subCard = (sub: Substitution) => {
       const newItems = analyzeAll(sub.chords, k);
       return h('li', { class: `sub-card bold-${sub.boldness}` },
-        h('header', null, h('span', { class: 'badge' }, SUB_TYPE_NAMES[sub.type]), h('strong', null, sub.title)),
-        h('p', null, sub.explanation),
+        h('header', null, h('span', { class: 'badge' }, SUB_TYPE_NAMES[sub.type]), h('strong', null, richText(sub.title, k))),
+        h('p', null, richText(sub.explanation, k)),
         h('div', { class: 'pills' }, newItems.map((it, i) => pill(it, { small: true, changed: sub.changed.includes(i) }))),
         h('footer', null,
           playButton(() => ({ voicings: voiceProgression(newItems.map((x) => x.chord), styleFor(genre)), bars: sub.bars, pattern, instrument }), () => {}, 'Ascolta'),

@@ -1,6 +1,6 @@
 import { h } from '../dom';
 import { chordDiagram } from './diagrams';
-import { tip } from './chordTip';
+import { tip, richText, plainText } from './chordTip';
 import { parseRoman, realize, prettyRoman, type Key, type RomanChord } from '../../theory/roman';
 import { chordSymbol, type Chord } from '../../theory/chords';
 import { analyzeChord, type ChordAnalysis } from '../../theory/analysis';
@@ -19,13 +19,14 @@ export interface ChordItem {
   symbol: string;
   analysis: ChordAnalysis;
   rootPc: number;
+  key: Key;
 }
 
 export function analyzeAll(chords: string[], key: Key): ChordItem[] {
   return chords.map((numeral) => {
     const rc = parseRoman(numeral);
     const chord = realize(rc, key);
-    return { numeral, rc, chord, symbol: chordSymbol(chord), analysis: analyzeChord(rc, key), rootPc: pc(chord.root) };
+    return { numeral, rc, chord, symbol: chordSymbol(chord), analysis: analyzeChord(rc, key), rootPc: pc(chord.root), key };
   });
 }
 
@@ -36,7 +37,7 @@ export function pill(item: ChordItem, opts: { small?: boolean; changed?: boolean
   const el = h(tag as 'span', { class: cls.join(' '), tabindex: opts.onClick ? undefined : '0', onclick: opts.onClick, type: opts.onClick ? 'button' : undefined },
     h('span', { class: 'pill-sym' }, item.symbol),
     h('span', { class: 'pill-num' }, prettyRoman(item.rc)));
-  return tip(el, item.chord, undefined, `${prettyRoman(item.rc)} · ${a.label}`);
+  return tip(el, item.chord, undefined, `${prettyRoman(item.rc)} · ${plainText(a.label, item.key)}`);
 }
 
 export function legend(): HTMLElement {
@@ -138,14 +139,14 @@ export interface CardOptions {
 export function progressionCard(o: CardOptions): HTMLElement {
   const items = analyzeAll(o.chords, o.key);
   const voicings = voiceProgression(items.map((i) => i.chord), o.style);
-  const pills = items.map((it, i) => tip(pill(it), it.chord, voicings[i], `${prettyRoman(it.rc)} · ${it.analysis.label}`));
+  const pills = items.map((it, i) => tip(pill(it), it.chord, voicings[i], `${prettyRoman(it.rc)} · ${plainText(it.analysis.label, o.key)}`));
   const flats = o.key.tonic.acc < 0;
   const diagrams = h('div', { class: 'mini-diagrams' },
     items.map((it, i) => tip(h('div', { class: 'mini', tabindex: '0' }, chordDiagram(voicings[i], { rootPc: it.rootPc, size: 'sm', title: it.symbol, flats }), h('span', null, it.symbol)), it.chord, voicings[i])));
   const highlight = (i: number | null) => pills.forEach((p, k) => p.classList.toggle('active', k === i));
   return h('article', { class: 'card prog-card' },
     h('header', null,
-      h('div', null, h('h3', null, h('a', { href: o.href }, o.title)), o.subtitle ? h('p', { class: 'muted small' }, o.subtitle) : null),
+      h('div', null, h('h3', null, h('a', { href: o.href }, o.title)), o.subtitle ? h('p', { class: 'muted small' }, richText(o.subtitle, o.key)) : null),
       o.badges?.length ? h('div', { class: 'badges' }, o.badges) : null),
     h('div', { class: 'pills' }, pills),
     diagrams,

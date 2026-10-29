@@ -1,10 +1,10 @@
 import { h } from '../dom';
 import { chordDiagram } from './diagrams';
-import { QUALITIES, chordSymbol, chordTones, type Chord, type QualityId } from '../../theory/chords';
-import { noteName, parseNote, pc, type Note } from '../../theory/notes';
+import { QUALITIES, chordSymbol, chordTones, type Chord } from '../../theory/chords';
+import { noteName, pc } from '../../theory/notes';
 import { voiceProgression, type Voicing } from '../../guitar/voicings';
-import { parseRoman, realize } from '../../theory/roman';
-import { context, currentKey, styleFor } from '../state';
+import { parseRoman, prettyRoman, realize, type Key } from '../../theory/roman';
+import { context, styleFor } from '../state';
 
 interface TipData {
   chord: Chord;
@@ -126,122 +126,49 @@ export function initChordTips(): void {
 }
 
 // ── accordi scritti nei testi ──────────────────────────────────────────────
+//
+// Nei testi un accordo si marca esplicitamente con un numerale romano, risolto nella tonalità del contesto:
+//   [V7/vi] → mostra il numerale ("V7/vi")
+//   {V7/vi} → mostra il simbolo (es. "E7" in Do, "Mi7" in notazione latina)
+// Tutto il resto è testo: nessuna euristica decide cosa "sembra" un accordo.
 
-const ROOT = '(?:Sol|Do|Re|Mi|Fa|La|Si|[A-G])[♯♭#b]?';
-const SUFFIXES = (() => {
-  const map = new Map<string, QualityId>();
-  for (const q of Object.values(QUALITIES)) {
-    if (!q.symbol) continue;
-    for (const s of new Set([q.symbol, q.symbol.replace(/♭/g, 'b').replace(/♯/g, '#')])) map.set(s, q.id);
-  }
-  map.set('min', 'min'); map.set('min7', 'm7'); map.set('dim', 'dim'); map.set('aug', 'aug');
-  return map;
-})();
-const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const SUFFIX_RE = [...SUFFIXES.keys()].sort((a, b) => b.length - a.length).map(esc).join('|');
-// Un nome è un accordo solo se ha un suffisso (Am, Sol7, Re♭7) o un basso (Do/Mi): "La" o "E" da soli sono parole.
-const CHORD_RE = new RegExp(`(${ROOT})(${SUFFIX_RE})?(?:/(${ROOT}))?(?![\\p{L}\\d♯♭#])`, 'gu');
+const MARK_RE = /\[([^\]]+)\]|\{([^}]+)\}/g;
 
-const LATIN: Record<string, string> = { Do: 'C', Re: 'D', Mi: 'E', Fa: 'F', Sol: 'G', La: 'A', Si: 'B' };
-const noteFromText = (s: string): Note => parseNote(s.replace(/^(Sol|Do|Re|Mi|Fa|La|Si)/, (l) => LATIN[l]));
-
-/** Interpreta un nome scritto (es. "Sol7", "Am", "Do/Mi"); null se non è un accordo. */
-export function parseChordName(text: string): Chord | null {
-  const m = new RegExp(`^${CHORD_RE.source}$`, 'u').exec(text);
-  if (!m || (!m[2] && !m[3])) return null;
-  try {
-    return { root: noteFromText(m[1]), quality: m[2] ? SUFFIXES.get(m[2])! : 'maj', bass: m[3] ? noteFromText(m[3]) : undefined };
-  } catch {
-    return null;
-  }
+interface Mark {
+  chord: Chord;
+  label: string;
 }
 
-const ROMAN = '[♭♯]?(?:VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i)(?:°7?|ø7?|\\+|maj7|sus[24]|[0-9]+)?(?:/(?:[♭♯]?(?:VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i)|[0-9]))?';
-const NAME = `${ROOT}(?:${SUFFIX_RE})?(?:/${ROOT})?`;
-const TOKEN = `(?:${ROMAN}|${NAME})`;
-const NB = '(?![\\p{L}\\d♯♭#])';
-// Una sequenza di almeno due accordi ("I – V – vi – IV", "Do – Sol – Lam"): qui anche i nomi nudi sono accordi.
-const RUN_RE = new RegExp(`(?<![\\p{L}\\d])${TOKEN}(?:\\s*[–—,→-]\\s*${TOKEN})+${NB}`, 'gu');
-const TOKEN_RE = new RegExp(`(?<![\\p{L}\\d])${TOKEN}${NB}`, 'gu');
-// Un numero romano da solo è un accordo solo se è inequivocabile (♭VII, V7, I/3, ii°): "i" e "vi" nudi sono parole.
-const SOLO_ROMAN = new RegExp(`^(?:[♭♯](?:VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i)|(?:VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i)(?:°|ø|\\+|maj7|sus|[0-9]|/))`, 'u');
-
-function chordFromToken(tok: string, bare: boolean): Chord | null {
-  const named = parseChordName(tok) ?? (bare ? bareName(tok) : null);
-  if (named) return named;
-  if (!bare && !SOLO_ROMAN.test(tok)) return null;
-  try {
-    return realize(parseRoman(tok), currentKey());
-  } catch {
-    return null;
-  }
+function resolveMark(token: string, asSymbol: boolean, key: Key): Mark {
+  const rc = parseRoman(token);
+  const chord = realize(rc, key);
+  return { chord, label: asSymbol ? chordSymbol(chord) : prettyRoman(rc) };
 }
 
-function bareName(tok: string): Chord | null {
-  if (!new RegExp(`^${ROOT}$`, 'u').test(tok)) return null;
-  try {
-    return { root: noteFromText(tok), quality: 'maj' };
-  } catch {
-    return null;
-  }
-}
-
-function linkTokens(text: string, bare: boolean, out: (string | HTMLElement)[]): void {
+function splitMarks(text: string, key: Key): (string | Mark)[] {
+  const out: (string | Mark)[] = [];
   let last = 0;
-  for (const m of text.matchAll(TOKEN_RE)) {
+  for (const m of text.matchAll(MARK_RE)) {
     const i = m.index ?? 0;
-    if (!bare && !m[0].includes('/') && parseChordName(m[0]) === null && !SOLO_ROMAN.test(m[0])) continue;
-    const chord = chordFromToken(m[0], bare);
-    if (!chord) continue;
     if (i > last) out.push(text.slice(last, i));
-    out.push(chordRef(chord, m[0]));
+    out.push(resolveMark(m[1] ?? m[2], m[2] !== undefined, key));
     last = i + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));
+  return out;
 }
 
-/** Spezza un testo in nodi, sostituendo i nomi di accordo e i numeri romani con elementi che mostrano il diagramma. */
-export function linkChords(text: string): (string | HTMLElement)[] {
-  const out: (string | HTMLElement)[] = [];
-  let last = 0;
-  for (const m of text.matchAll(RUN_RE)) {
-    const i = m.index ?? 0;
-    const toks = [...m[0].matchAll(TOKEN_RE)].map((t) => t[0]);
-    if (!toks.every((t) => chordFromToken(t, true))) continue;
-    if (i > last) linkTokens(text.slice(last, i), false, out);
-    linkTokens(m[0], true, out);
-    last = i + m[0].length;
-  }
-  if (last < text.length) linkTokens(text.slice(last), false, out);
-  return out.length === 1 && typeof out[0] === 'string' ? [text] : out;
+/** Testo con accordi marcati → nodi, con il diagramma al mouseover su ogni accordo. */
+export function richText(text: string, key: Key): (string | HTMLElement)[] {
+  return splitMarks(text, key).map((p) => (typeof p === 'string' ? p : chordRef(p.chord, p.label)));
 }
 
-const SKIP = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION', 'BUTTON', 'SVG', 'TITLE']);
+/** Come richText, ma restituisce una stringa (per title, aria-label, didascalie). */
+export function plainText(text: string, key: Key): string {
+  return splitMarks(text, key).map((p) => (typeof p === 'string' ? p : p.label)).join('');
+}
 
-/**
- * Rete di sicurezza: dopo ogni render cerca nei testi i nomi di accordo rimasti "nudi" e li rende interattivi.
- * Non tocca pulsanti, SVG e ciò che ha già un diagramma.
- */
-export function autolinkChords(root: Element): void {
-  // pulsanti con un accordo nell'etichetta (es. "Scala su Cmaj7"): il diagramma compare sul pulsante stesso
-  root.querySelectorAll(`button:not([${ATTR}])`).forEach((b) => {
-    for (const m of (b.textContent ?? '').matchAll(CHORD_RE)) {
-      const chord = (m[2] || m[3]) ? parseChordName(m[0]) : null;
-      if (chord) { tip(b, chord); break; }
-    }
-  });
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(n) {
-      for (let p = n.parentElement; p && p !== root.parentElement; p = p.parentElement) {
-        if (SKIP.has(p.tagName.toUpperCase()) || p.hasAttribute(ATTR)) return NodeFilter.FILTER_REJECT;
-      }
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-  const nodes: Text[] = [];
-  for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n as Text);
-  for (const n of nodes) {
-    const parts = linkChords(n.data);
-    if (parts.length > 1 || typeof parts[0] !== 'string') n.replaceWith(...parts);
-  }
+/** Elenca i token marcati in un testo (usato dai test per validare i dati). */
+export function marks(text: string): string[] {
+  return [...text.matchAll(MARK_RE)].map((m) => m[1] ?? m[2]);
 }

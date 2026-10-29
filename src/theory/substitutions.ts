@@ -1,8 +1,8 @@
 import { mod, MAJOR_STEPS } from './notes';
-import { QUALITIES, chordSymbol, commonTones, type QualityId } from './chords';
+import { QUALITIES, commonTones, type QualityId } from './chords';
 import { MODES, harmonize, scalePcs, type ScaleId } from './scales';
 import {
-  type Key, type RomanChord, type Degree, parseRoman, formatRoman, realize, rootOffset, isDiatonic, prettyRoman,
+  type Key, type RomanChord, type Degree, parseRoman, formatRoman, realize, rootOffset, isDiatonic,
 } from './roman';
 import { pc } from './notes';
 
@@ -69,6 +69,7 @@ interface Ctx {
   bars: number[];
   i: number;
   key: Key;
+  /** Accordo marcato per il testo, mostrato come simbolo: "{V7/vi}" (vedi richText). */
   sym: (rc: RomanChord | string) => string;
 }
 
@@ -101,7 +102,7 @@ const diatonicRule: Rule = (ctx) => {
     const r = replace(ctx, ctx.i, [cand]);
     out.push({
       type: 'diatonica', boldness: 'sicura', ...r,
-      title: `${prettyRoman(cur)} → ${prettyRoman(cand)}`,
+      title: `${num(cur)} → ${num(cand)}`,
       explanation: `${ctx.sym(cand)} condivide ${shared} note con ${ctx.sym(cur)}: stessa "famiglia", il cambio è morbido ma il colore cambia.`,
     });
   }
@@ -144,7 +145,7 @@ const COLOR_TEXT: Partial<Record<QualityId, string>> = {
   maj: 'triade semplice: più diretta e pulita',
   min: 'triade minore semplice',
   dim7: 'diminuito settima: simmetrico, ottimo di passaggio',
-  m7b5: 'semidiminuito: il ii del minore',
+  m7b5: 'semidiminuito: il [iiø7] del minore',
 } as Partial<Record<QualityId, string>>;
 
 const colorRule: Rule = (ctx) => {
@@ -176,6 +177,9 @@ const PARALLEL: Record<'major' | 'minor', ScaleId[]> = {
   minor: ['major', 'dorian', 'harmonicMinor', 'melodicMinor'],
 };
 
+/** Numerale marcato per il testo: "[V7/vi]" (vedi richText). */
+const num = (rc: RomanChord): string => `[${formatRoman(rc)}]`;
+
 const borrowRule: Rule = (ctx) => {
   const cur = ctx.rcs[ctx.i];
   if (cur.target) return [];
@@ -186,7 +190,7 @@ const borrowRule: Rule = (ctx) => {
   const push = (cand: RomanChord, from: string, text: string, bold: Boldness = 'colore') => {
     if (formatRoman(cand) === formatRoman(cur)) return;
     const r = replace(ctx, ctx.i, [cand]);
-    out.push({ type: 'prestito', boldness: bold, ...r, title: `${prettyRoman(cur)} → ${prettyRoman(cand)}`, explanation: `Preso in prestito ${from}: ${text}` });
+    out.push({ type: 'prestito', boldness: bold, ...r, title: `${num(cur)} → ${num(cand)}`, explanation: `Preso in prestito ${from}: ${text}` });
   };
   // 1) stesso grado, terza opposta
   const f = fam(cur);
@@ -200,9 +204,9 @@ const borrowRule: Rule = (ctx) => {
         const nm = s === 'minor' ? 'dal minore parallelo' : s === 'major' ? 'dal maggiore parallelo' : `dal modo ${s === 'harmonicMinor' ? 'minore armonico' : s === 'melodicMinor' ? 'minore melodico' : s === 'dorian' ? 'dorico' : s === 'mixolydian' ? 'misolidio' : 'frigio'}`;
         const isLastTonic = off === 0 && tonality === 'minor';
         const text = off === 5 && f === 'major'
-          ? 'il IV diventa minore: il suono dolce-amaro di Beatles e Radiohead.'
+          ? 'il [IV] diventa minore: il suono dolce-amaro di Beatles e Radiohead.'
           : isLastTonic ? 'la "terza piccarda": finire un brano minore sull\'accordo maggiore.'
-            : off === 7 && f === 'minor' ? 'il V maggiore porta la sensibile: risoluzione molto più forte.'
+            : off === 7 && f === 'minor' ? 'il [V] maggiore porta la sensibile: risoluzione molto più forte.'
               : off === 9 && f === 'major' && tonality === 'minor' ? 'la sesta dorica: il minore si illumina.'
                 : 'stesso basso, cambia la terza: luce e ombra.';
         push(flipped, nm, text, off === 0 ? 'audace' : 'colore');
@@ -212,15 +216,15 @@ const borrowRule: Rule = (ctx) => {
   }
   // 2) prestiti per funzione
   if (tonality === 'major') {
-    if (off === 9 && f === 'minor') push(rcFromOffset(8, 'maj'), 'dal minore', '♭VI al posto del vi: più epico e drammatico.');
-    if (off === 4 && f === 'minor') push(rcFromOffset(3, 'maj'), 'dal minore', '♭III al posto del iii: sapore rock/blues.');
-    if (off === 7) push(rcFromOffset(10, 'maj'), 'dal misolidio', '♭VII al posto del V: risoluzione "rock" senza sensibile.');
-    if (off === 2 && f === 'minor') push({ ...cur, quality: 'm7b5' }, 'dal minore', 'ii semidiminuito: prepara il V con un tocco scuro.');
-    if (off === 5) push(rcFromOffset(8, 'maj'), 'dal minore', '♭VI come sottodominante alternativa: grande ed epica.', 'audace');
+    if (off === 9 && f === 'minor') push(rcFromOffset(8, 'maj'), 'dal minore', '[♭VI] al posto del [vi]: più epico e drammatico.');
+    if (off === 4 && f === 'minor') push(rcFromOffset(3, 'maj'), 'dal minore', '[♭III] al posto del [iii]: sapore rock/blues.');
+    if (off === 7) push(rcFromOffset(10, 'maj'), 'dal misolidio', '[♭VII] al posto del [V]: risoluzione "rock" senza sensibile.');
+    if (off === 2 && f === 'minor') push({ ...cur, quality: 'm7b5' }, 'dal minore', '[iiø7]: prepara il [V] con un tocco scuro.');
+    if (off === 5) push(rcFromOffset(8, 'maj'), 'dal minore', '[♭VI] come sottodominante alternativa: grande ed epica.', 'audace');
   } else {
-    if (off === 10) push(rcFromOffset(11, 'dim'), 'dalla minore armonica', 'vii° al posto del ♭VII: tensione classica verso i.');
-    if (off === 7 && f === 'minor') push({ ...cur, quality: '7' }, 'dalla minore armonica', 'V7: la dominante con la sensibile, molto più "classica".');
-    if (off === 8) push(rcFromOffset(5, 'min'), 'stesso campo armonico', 'iv al posto del ♭VI: stessa funzione di sottodominante, più scura.');
+    if (off === 10) push(rcFromOffset(11, 'dim'), 'dalla minore armonica', '[vii°] al posto del [♭VII]: tensione classica verso [i].');
+    if (off === 7 && f === 'minor') push({ ...cur, quality: '7' }, 'dalla minore armonica', '[V7]: la dominante con la sensibile, molto più "classica".');
+    if (off === 8) push(rcFromOffset(5, 'min'), 'stesso campo armonico', '[iv] al posto del [♭VI]: stessa funzione di sottodominante, più scura.');
   }
   return out;
 };
@@ -239,7 +243,7 @@ const secondaryRule: Rule = (ctx) => {
     const r = replace(ctx, ctx.i, [cand]);
     out.push({
       type: 'secondaria', boldness: 'colore', ...r,
-      title: `${prettyRoman(cur)} → ${prettyRoman(cand)}`,
+      title: `${num(cur)} → ${num(cand)}`,
       explanation: `${ctx.sym(cand)} è la dominante di ${ctx.sym(next)}: crea una forte attrazione verso l'accordo successivo.`,
     });
   }
@@ -252,7 +256,7 @@ const secondaryRule: Rule = (ctx) => {
       const r = replace(ctx, prevIdx, [prev, cand]);
       out.push({
         type: 'secondaria', boldness: 'colore', ...r,
-        title: `+ ${prettyRoman(cand)} prima di ${prettyRoman(cur)}`,
+        title: `+ ${num(cand)} prima di ${num(cur)}`,
         explanation: `Mezza battuta di ${ctx.sym(cand)} (dominante di ${ctx.sym(cur)}) per "annunciare" l'accordo.`,
       });
     }
@@ -289,7 +293,7 @@ const twoFiveRule: Rule = (ctx) => {
   const r = replace(ctx, prevIdx, [two, five]);
   return [{
     type: 'ii-V', boldness: isTonic(cur) ? 'colore' : 'audace', ...r,
-    title: `${prettyRoman(two)} – ${prettyRoman(five)} → ${prettyRoman(cur)}`,
+    title: `${num(two)} – ${num(five)} → ${num(cur)}`,
     explanation: `Il "ii–V" di ${ctx.sym(cur)} (${ctx.sym(two)} – ${ctx.sym(five)}) al posto dell'accordo precedente: ${ctx.sym(cur)} sembra una piccola tonica.`,
   }];
 };
@@ -307,7 +311,7 @@ const diminishedRule: Rule = (ctx) => {
     const r = replace(ctx, ctx.i, [cur, pass]);
     out.push({
       type: 'diminuito', boldness: 'colore', ...r,
-      title: `+ ${prettyRoman(pass)} tra ${prettyRoman(cur)} e ${prettyRoman(next)}`,
+      title: `+ ${num(pass)} tra ${num(cur)} e ${num(next)}`,
       explanation: `Il basso sale di semitono (${ctx.sym(cur)} → ${ctx.sym(pass)} → ${ctx.sym(next)}): passaggio cromatico tipico di gospel, jazz e cantautorato.`,
     });
   }
@@ -316,7 +320,7 @@ const diminishedRule: Rule = (ctx) => {
     const r = replace(ctx, ctx.i, [cur, pass]);
     out.push({
       type: 'diminuito', boldness: 'audace', ...r,
-      title: `+ ${prettyRoman(pass)} discendente`,
+      title: `+ ${num(pass)} discendente`,
       explanation: `Diminuito cromatico discendente fra ${ctx.sym(cur)} e ${ctx.sym(next)}: elegante, molto jazz.`,
     });
   }
@@ -405,7 +409,7 @@ const backdoorRule: Rule = (ctx) => {
   const r = replace(ctx, ctx.i, [iv, b7]);
   return [{
     type: 'backdoor', boldness: 'audace', ...r,
-    title: `${prettyRoman(cur)} → ${prettyRoman(iv)} – ${prettyRoman(b7)}`,
+    title: `${num(cur)} → ${num(iv)} – ${num(b7)}`,
     explanation: `Al posto della dominante, si arriva a casa dalla "porta di servizio" (${ctx.sym(iv)} – ${ctx.sym(b7)}): caldo e nostalgico.`,
   }];
 };
@@ -420,7 +424,7 @@ const neapolitanRule: Rule = (ctx) => {
   const r = replace(ctx, ctx.i, [cand]);
   return [{
     type: 'napoletana', boldness: 'audace', ...r,
-    title: `${prettyRoman(cur)} → ${prettyRoman(cand)}`,
+    title: `${num(cur)} → ${num(cand)}`,
     explanation: `La "sesta napoletana" ${ctx.sym(cand)} prepara la dominante con un colore struggente, da opera (o da metal frigio).`,
   }];
 };
@@ -435,7 +439,7 @@ const deceptiveRule: Rule = (ctx) => {
   const r = replace(ctx, ctx.i, [cand]);
   return [{
     type: 'inganno', boldness: 'colore', ...r,
-    title: `${prettyRoman(cur)} → ${prettyRoman(cand)}`,
+    title: `${num(cur)} → ${num(cand)}`,
     explanation: `Dopo la dominante l'orecchio si aspetta la tonica: con ${ctx.sym(cand)} la frase resta aperta, emozionante.`,
   }];
 };
@@ -463,7 +467,7 @@ export function substitutionsFor(chords: string[], index: number, key: Key, bars
   const rcs = chords.map(parseRoman);
   const ctx: Ctx = {
     chords, rcs, i: index, key, bars: bars ?? chords.map(() => 1),
-    sym: (rc) => chordSymbol(realize(typeof rc === 'string' ? parseRoman(rc) : rc, key)),
+    sym: (rc) => `{${formatRoman(typeof rc === 'string' ? parseRoman(rc) : rc)}}`,
   };
   const seen = new Set<string>([chords.join(' ')]);
   const out: Substitution[] = [];
