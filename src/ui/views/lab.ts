@@ -1,4 +1,4 @@
-import { h, field, segmented } from '../dom';
+import { h, s as svg, field, segmented } from '../dom';
 import { genreSelect } from '../components/controls';
 import { analyzeAll, pill, playButton, midiButton, legend, type ChordItem } from '../components/progression';
 import { richText } from '../components/chordTip';
@@ -43,6 +43,12 @@ const FN_GROUPS: { fn: HarmonicFunction; name: string; hint: string }[] = [
 ];
 
 const upgrade = (rc: RomanChord, q: QualityId): string => formatRoman({ ...rc, quality: q });
+
+/** Icone a tratto (stile della barra degli strumenti). */
+const UNDO = ['M9 14 4 9l5-5', 'M4 9h10.5a5.5 5.5 0 0 1 0 11H11'];
+const TRASH = ['M3 6h18', 'M8 6V4h8v2', 'M19 6l-1 14H6L5 6', 'M10 11v6', 'M14 11v6'];
+const icon = (paths: string[]) => svg('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' },
+  paths.map((d) => svg('path', { d })));
 
 /** Quanto è comune, a parole: i numeri sono una stima, le parole dicono l'ordine di grandezza. */
 function bucket(p: number): string {
@@ -138,8 +144,8 @@ export function labView(route: Route): HTMLElement {
         h('h2', null, 'La tua progressione'),
         h('div', { class: 'toolbar-actions' },
           built.length ? playButton(playArgs(built), highlight, 'Suona') : null,
-          built.length ? h('button', { type: 'button', class: 'btn', onclick: () => { built = built.slice(0, -1); render(); } }, 'Annulla') : null,
-          built.length ? h('button', { type: 'button', class: 'btn', onclick: () => { built = []; render(); } }, 'Svuota') : null,
+          built.length ? h('button', { type: 'button', class: 'round', 'aria-label': 'Annulla l\'ultimo accordo', title: 'Annulla l\'ultimo accordo', onclick: () => { built = built.slice(0, -1); render(); } }, icon(UNDO)) : null,
+          built.length ? h('button', { type: 'button', class: 'round', 'aria-label': 'Svuota la progressione', title: 'Svuota la progressione', onclick: () => { built = []; render(); } }, icon(TRASH)) : null,
           built.length ? midiButton(playArgs(built), () => items.map((i) => i.symbol), () => 'La mia progressione') : null,
           built.length >= 2 ? h('a', { class: 'btn primary', href: href('prog', { c: built.join(','), o: built.join(','), k: context.tonic, m: context.mode, g: genre }) }, 'Apri come progressione →') : null)),
       timeline,
