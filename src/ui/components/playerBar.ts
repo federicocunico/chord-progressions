@@ -1,5 +1,5 @@
 import { h, select } from '../dom';
-import { onNowPlaying, playProgression, stopAll, exportMidi, pill, type NowPlaying } from './progression';
+import { onNowPlaying, playProgression, stopAll, exportMidi, pill, downloadIcon, type NowPlaying } from './progression';
 import { settings, updateSettings, genreInstrument, genrePattern } from '../state';
 import { PATTERNS, INSTRUMENTS, type Pattern, type InstrumentId } from '../../audio/player';
 
@@ -47,7 +47,7 @@ export function playerBar(): HTMLElement {
               onchange: (e: Event) => change({ bpm: Number((e.target as HTMLInputElement).value) }),
             }), bpmOut),
           h('button', { type: 'button', class: ['btn', 'small', settings.loop ? 'active' : ''], 'aria-pressed': String(settings.loop), onclick: () => change({ loop: !settings.loop }) }, 'Loop'),
-          h('button', { type: 'button', class: 'btn small', onclick: () => exportMidi(n.replay(), (a.items ?? []).map((i) => i.symbol), a.title ?? 'progressione') }, 'MIDI'),
+          h('button', { type: 'button', class: 'round', title: 'Scarica MIDI', 'aria-label': 'Scarica MIDI', onclick: () => exportMidi(n.replay(), (a.items ?? []).map((i) => i.symbol), a.title ?? 'progressione') }, downloadIcon()),
           h('button', { type: 'button', class: 'round', 'aria-label': 'Chiudi il lettore', onclick: () => { stopAll(); bar.hidden = true; document.body.classList.remove('has-player'); } }, '×'))));
   }
 

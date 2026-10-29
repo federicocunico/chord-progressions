@@ -9,7 +9,7 @@ import { getOutput, allNotesOff } from './midi';
 export { PATTERNS, type Pattern, type PlayChord } from './sequencer';
 
 export type InstrumentId =
-  | 'acoustic_guitar_steel' | 'acoustic_guitar_nylon' | 'electric_guitar_clean'
+  | 'acoustic_grand_piano' | 'acoustic_guitar_steel' | 'acoustic_guitar_nylon' | 'electric_guitar_clean'
   | 'electric_guitar_jazz' | 'overdriven_guitar' | 'distortion_guitar' | 'synth';
 
 export interface InstrumentDef {
@@ -21,6 +21,7 @@ export interface InstrumentDef {
 }
 
 export const INSTRUMENTS: Record<InstrumentId, InstrumentDef> = {
+  acoustic_grand_piano: { name: 'Pianoforte', program: 0, gain: 0.9, sampled: true },
   acoustic_guitar_steel: { name: 'Chitarra acustica (corde in acciaio)', program: 25, gain: 0.9, sampled: true },
   acoustic_guitar_nylon: { name: 'Chitarra classica (nylon)', program: 24, gain: 1, sampled: true },
   electric_guitar_clean: { name: 'Elettrica pulita', program: 27, gain: 0.85, sampled: true },

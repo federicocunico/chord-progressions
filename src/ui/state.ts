@@ -19,6 +19,8 @@ export interface Settings {
   instrument: InstrumentId | 'genre';
   /** Id dell'uscita Web MIDI ('' = nessuna). */
   midiOut: string;
+  /** Versione delle impostazioni salvate (per aggiornare i default). */
+  v?: number;
 }
 
 export interface Context {
@@ -30,7 +32,10 @@ export interface Context {
   seed: number;
 }
 
-const DEFAULT_SETTINGS: Settings = { notation: 'english', theme: 'auto', bpm: 90, pattern: 'genre', loop: true, style: 'genre', instrument: 'genre', midiOut: '' };
+/** Ascolto di default: pianoforte, ritmo semplice, una sola volta (il suono del genere resta a un clic). */
+const SOUND_DEFAULTS = { bpm: 100, pattern: 'simple', loop: false, instrument: 'acoustic_grand_piano' } as const;
+const SETTINGS_VERSION = 2;
+const DEFAULT_SETTINGS: Settings = { notation: 'english', theme: 'auto', style: 'genre', midiOut: '', ...SOUND_DEFAULTS };
 const DEFAULT_CONTEXT: Context = { tonic: 'C', mode: 'major', genre: 'pop', length: 4, popularity: 4, seed: 1 };
 
 function load<T>(k: string, def: T): T {
@@ -50,6 +55,10 @@ function save(k: string, v: unknown): void {
 }
 
 export const settings: Settings = load('cp.settings', DEFAULT_SETTINGS);
+if ((settings.v ?? 1) < SETTINGS_VERSION) {
+  Object.assign(settings, SOUND_DEFAULTS, { v: SETTINGS_VERSION });
+  save('cp.settings', settings);
+}
 export const context: Context = load('cp.context', DEFAULT_CONTEXT);
 if (!GENRE_MAP[context.genre]) context.genre = 'pop';
 try { parseNote(context.tonic); } catch { context.tonic = 'C'; }

@@ -1,4 +1,4 @@
-import { h } from '../dom';
+import { h, s } from '../dom';
 import { chordDiagram } from './diagrams';
 import { tip, richText, plainText } from './chordTip';
 import { parseRoman, realize, prettyRoman, type Key, type RomanChord } from '../../theory/roman';
@@ -150,11 +150,18 @@ export function exportMidi(a: PlayArgs, symbols: string[], name: string): void {
   downloadBytes(bytes, `${safe}-${settings.bpm}bpm.mid`);
 }
 
+/** Icona "scarica" a tratto. */
+export function downloadIcon(): SVGSVGElement {
+  return s('svg', { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' },
+    s('path', { d: 'M12 4v11' }), s('path', { d: 'm7 10 5 5 5-5' }), s('path', { d: 'M5 20h14' }));
+}
+
 export function midiButton(getArgs: () => PlayArgs, symbols: () => string[], name: () => string): HTMLButtonElement {
+  const label = 'Scarica MIDI (.mid per DAW, Guitar Pro, MuseScore…)';
   return h('button', {
-    type: 'button', class: 'btn', title: 'Scarica un file .mid da aprire in un DAW, Guitar Pro, MuseScore…',
+    type: 'button', class: 'round', title: label, 'aria-label': label,
     onclick: () => exportMidi(getArgs(), symbols(), name()),
-  }, '⬇ MIDI');
+  }, downloadIcon());
 }
 
 export interface CardOptions {

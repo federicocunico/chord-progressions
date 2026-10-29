@@ -108,7 +108,7 @@ function renderShell() {
   mount(shell, header(), main,
     h('footer', { class: 'bottom' },
       h('p', null, 'Ispirato all\'approccio visivo di ', h('a', { href: 'https://www.instagram.com/briancalli.music/', rel: 'noopener', target: '_blank' }, 'Brian Calli'), '. ',
-        'Teoria, voicing e audio calcolati nel browser. Suoni di chitarra: soundfont FluidR3 GM (CC BY 3.0, ',
+        'Teoria, voicing e audio calcolati nel browser. Suoni di chitarra e pianoforte: soundfont FluidR3 GM (CC BY 3.0, ',
         h('a', { href: 'https://github.com/gleitz/midi-js-soundfonts', rel: 'noopener', target: '_blank' }, 'midi-js-soundfonts'), '). ',
         h('a', { href: 'https://github.com/federicocunico/chord-progressions', rel: 'noopener', target: '_blank' }, 'Codice su GitHub'), '.')));
 }

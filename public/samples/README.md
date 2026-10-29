@@ -1,4 +1,4 @@
-# Campioni di chitarra
+# Campioni di chitarra e pianoforte
 
 Note da Mi2 (MIDI 40) a Mi6 (MIDI 88) estratte dalla soundfont **FluidR3_GM** (Frank Wen),
 in versione pre-renderizzata da [gleitz/midi-js-soundfonts](https://github.com/gleitz/midi-js-soundfonts).
@@ -7,6 +7,7 @@ Licenza: [Creative Commons Attribution 3.0](https://creativecommons.org/licenses
 
 | Cartella | Programma General MIDI |
 |---|---|
+| `acoustic_grand_piano` | 1 – Acoustic Grand Piano |
 | `acoustic_guitar_nylon` | 25 – Acoustic Guitar (nylon) |
 | `acoustic_guitar_steel` | 26 – Acoustic Guitar (steel) |
 | `electric_guitar_jazz` | 27 – Electric Guitar (jazz) |

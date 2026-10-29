@@ -4,9 +4,10 @@
  */
 
 export type Pattern =
-  | 'strum' | 'ballad' | 'arpeggio' | 'pad' | 'eighths' | 'gallop' | 'reggae' | 'bossa' | 'shuffle' | 'funk';
+  | 'simple' | 'strum' | 'ballad' | 'arpeggio' | 'pad' | 'eighths' | 'gallop' | 'reggae' | 'bossa' | 'shuffle' | 'funk';
 
 export const PATTERNS: Record<Pattern, string> = {
+  simple: 'Semplice (due pennate)',
   strum: 'Strumming pop',
   ballad: 'Ballata',
   arpeggio: 'Arpeggio',
@@ -61,6 +62,8 @@ const S = (t: number, kind: Kind, vel: number, len: number, muted = false, strin
 /** Colpi di una battuta da 4/4 per ciascun ritmo. */
 function barStrokes(pattern: Pattern, n: number): Stroke[] {
   switch (pattern) {
+    case 'simple':
+      return [S(0, 'down', 96, 2), S(2, 'down', 80, 2)];
     case 'pad':
       return [S(0, 'down', 96, 4)];
     case 'ballad':
