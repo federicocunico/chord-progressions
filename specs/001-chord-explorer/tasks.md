@@ -59,6 +59,6 @@ Legenda: `[x]` fatto · `[ ]` da fare · (US-n) storia collegata
 ## Backlog v2
 - [ ] Accordature alternative (Drop D, Eb standard, 7 corde)
 - [x] Export MIDI (Guitar Pro / MusicXML ancora da fare, vedi HANDOFF.md)
-- [ ] Ritmiche di strumming per genere
+- [x] Ritmiche di strumming per genere (10 ritmi, default per genere)
 - [ ] Preferiti e progressioni salvate condivisibili via URL (parziale: URL già condivisibile)
 - [ ] Modalità "melodia": suggerimento di frasi sulla scala
