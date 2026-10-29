@@ -32,12 +32,15 @@ export function analyzeAll(chords: string[], key: Key): ChordItem[] {
 
 export function pill(item: ChordItem, opts: { small?: boolean; big?: boolean; changed?: boolean; onClick?: () => void; active?: boolean } = {}): HTMLElement {
   const a = item.analysis;
-  const long = item.symbol.length > (opts.big ? 5 : 4);
-  const cls = ['pill', `fn-${a.fn}`, a.borrowed ? 'borrowed' : '', a.secondary || a.chromatic ? 'secondary' : '', opts.small ? 'small' : '', opts.big ? 'big' : '', long ? 'long' : '', opts.changed ? 'changed' : '', opts.active ? 'active' : ''];
+  // il simbolo usa tutta la larghezza: lo rimpiccioliamo in base a quanti caratteri ha
+  const n = item.symbol.length;
+  const size = n >= 6 ? 'xlong' : n >= 4 ? 'long' : n === 3 ? 'mid' : '';
+  const num = prettyRoman(item.rc);
+  const cls = ['pill', `fn-${a.fn}`, a.borrowed ? 'borrowed' : '', a.secondary || a.chromatic ? 'secondary' : '', opts.small ? 'small' : '', opts.big ? 'big' : '', size, num.length > 5 ? 'longnum' : '', opts.changed ? 'changed' : '', opts.active ? 'active' : ''];
   const tag = opts.onClick ? 'button' : 'span';
   const el = h(tag as 'span', { class: cls.join(' '), tabindex: opts.onClick ? undefined : '0', onclick: opts.onClick, type: opts.onClick ? 'button' : undefined },
     h('span', { class: 'pill-sym' }, item.symbol),
-    h('span', { class: 'pill-num' }, prettyRoman(item.rc)));
+    h('span', { class: 'pill-num' }, num));
   return tip(el, item.chord, undefined, `${prettyRoman(item.rc)} · ${plainText(a.label, item.key)}`);
 }
 
