@@ -15,6 +15,7 @@ import { genresView, genreDetailView } from './ui/views/genres';
 import { theoryView } from './ui/views/theory';
 import { initChordTips, hideChordTip } from './ui/components/chordTip';
 import { stopAll } from './ui/components/progression';
+import { playerBar } from './ui/components/playerBar';
 import type { GenreId } from './data/genres';
 
 const NAV: [string, string][] = [
@@ -72,7 +73,7 @@ function header(): HTMLElement {
 }
 
 const shell = h('div', { class: 'shell' });
-document.getElementById('app')!.append(shell);
+document.getElementById('app')!.append(shell, playerBar());
 
 function renderNav(active: string) {
   const sec = SECTION[active] ?? '';

@@ -89,7 +89,7 @@ export function detailView(route: Route): HTMLElement {
     const pattern = patternFor(genre);
     const power = styleFor(genre) === 'power';
     const instrument = instrumentFor(genre);
-    const playArgs = () => ({ voicings: chosen, bars, pattern, instrument });
+    const playArgs = () => ({ voicings: chosen, bars, pattern: patternFor(genre), instrument: instrumentFor(genre), title, items, genre });
 
     // ── intestazione
     const header = h('section', { class: 'detail-head' },

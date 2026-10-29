@@ -57,20 +57,49 @@ export interface PlayArgs {
   bars: number[];
   pattern: Pattern;
   instrument: InstrumentId;
+  /** Per il lettore in basso: cosa sta suonando. */
+  title?: string;
+  items?: ChordItem[];
+  genre?: GenreId;
 }
 
+/** Cosa sta suonando (o ha suonato per ultimo): lo mostra il lettore fisso in basso. */
+export interface NowPlaying {
+  args: PlayArgs;
+  /** Ricalcola gli argomenti con le impostazioni correnti (suono, ritmo). */
+  replay: () => PlayArgs;
+  index: number | null;
+  playing: boolean;
+}
+let now: NowPlaying | null = null;
+const nowListeners = new Set<(n: NowPlaying | null, onlyIndex: boolean) => void>();
+export function onNowPlaying(fn: (n: NowPlaying | null, onlyIndex: boolean) => void): () => void {
+  nowListeners.add(fn);
+  fn(now, false);
+  return () => nowListeners.delete(fn);
+}
+const emit = (onlyIndex = false) => nowListeners.forEach((f) => f(now, onlyIndex));
+
 /** Riproduce una progressione e chiama onChord(i) a ogni accordo. Restituisce la funzione di stop. */
-export function playProgression(a: PlayArgs, onChord: (i: number) => void, onStop: () => void, onReady?: () => void): () => void {
+export function playProgression(a: PlayArgs, onChord: (i: number) => void, onStop: () => void, onReady?: () => void, replay: () => PlayArgs = () => a): () => void {
   stopCurrent?.();
+  const mine: NowPlaying = { args: a, replay, index: null, playing: true };
+  now = mine;
+  emit();
+  const ended = () => {
+    if (now === mine) { mine.playing = false; mine.index = null; emit(); }
+  };
   const stop = () => {
     player.stop();
     onStop();
+    ended();
     if (stopCurrent === stop) stopCurrent = null;
   };
   stopCurrent = stop;
   void player.play(a.voicings.map((v, i) => ({ midis: voicingMidi(v), bars: a.bars[i] ?? 1 })), {
     bpm: settings.bpm, pattern: a.pattern, loop: settings.loop, instrument: a.instrument, midiOut: settings.midiOut,
-    onChord: (i) => { onReady?.(); onChord(i); }, onEnd: () => onStop(),
+    onChord: (i) => { onReady?.(); onChord(i); if (now === mine) { mine.index = i; emit(true); } },
+    onEnd: () => { onStop(); ended(); },
   });
   return stop;
 }
@@ -102,7 +131,7 @@ export function playButton(getArgs: () => PlayArgs, onChord: (i: number | null) 
     stop = playProgression(getArgs(), (i) => onChord(i), reset, () => {
       btn.classList.remove('loading');
       ico.textContent = '■';
-    });
+    }, getArgs);
   });
   return btn;
 }
@@ -155,7 +184,7 @@ export function progressionCard(o: CardOptions): HTMLElement {
     diagrams,
     o.meta ?? null,
     h('footer', null,
-      playButton(() => ({ voicings, bars: o.bars ?? o.chords.map(() => 1), pattern: o.pattern, instrument: instrumentFor(o.genre) }), highlight),
+      playButton(() => ({ voicings, bars: o.bars ?? o.chords.map(() => 1), pattern: o.pattern, instrument: instrumentFor(o.genre), title: o.title, items, genre: o.genre }), highlight),
       h('a', { class: 'btn primary', href: o.href }, 'Analizza e varia →')));
 }
 
@@ -175,7 +204,7 @@ export function progressionRow(o: CardOptions): HTMLElement {
       h('div', { class: 'tbar', 'aria-hidden': 'true', title: 'Tensione' },
         h('span', { style: { height: `${Math.round(6 + (it.analysis.tension / 6) * 38)}px`, opacity: String(0.35 + (it.analysis.tension / 6) * 0.65) } })))));
   return h('article', { class: 'prog-row' },
-    playButton(() => ({ voicings: getVoicings(), bars: o.bars ?? o.chords.map(() => 1), pattern: o.pattern, instrument: instrumentFor(o.genre) }), highlight, `Ascolta ${o.title}`, 'lg'),
+    playButton(() => ({ voicings: getVoicings(), bars: o.bars ?? o.chords.map(() => 1), pattern: o.pattern, instrument: instrumentFor(o.genre), title: o.title, items, genre: o.genre }), highlight, `Ascolta ${o.title}`, 'lg'),
     h('div', { class: 'info' },
       h('div', { class: 'badges' }, h('h3', null, h('a', { href: o.href }, o.title)), o.badges ?? null),
       o.subtitle ? h('p', null, richText(o.subtitle, o.key)) : null,

@@ -20,7 +20,7 @@ export function homeView(): HTMLElement {
   const journey = h('figure', { class: 'journey-card', 'aria-label': 'Il viaggio di una progressione' },
     h('div', { class: 'section-head', style: { margin: '0', alignItems: 'center' } },
       h('span', { class: 'kicker' }, 'Ogni giro è un piccolo viaggio'),
-      playButton(() => ({ voicings: voiceProgression(axisItems.map((i) => i.chord), styleFor('pop')), bars: axis.chords.map(() => 1), pattern: patternFor('pop'), instrument: instrumentFor('pop') }),
+      playButton(() => ({ voicings: voiceProgression(axisItems.map((i) => i.chord), styleFor('pop')), bars: axis.chords.map(() => 1), pattern: patternFor('pop'), instrument: instrumentFor('pop'), title: axis.name, items: axisItems, genre: 'pop' as const }),
         (i) => axisPills.forEach((p, k) => p.classList.toggle('active', k === i)), 'Ascolta l\'asse del pop', 'sm')),
     h('div', { class: 'journey-row' }, axisPills.map((p, i) => h('div', null, p, h('span', null, STEP_WORDS[i])))),
     h('p', { class: 'small', style: { margin: '0', borderTop: '2px dashed var(--line)', paddingTop: '14px' } },
@@ -33,7 +33,7 @@ export function homeView(): HTMLElement {
     const genre = ex.genres[0];
     const items = analyzeAll(ex.chords.slice(0, 4), key);
     const pills = items.map((it) => pill(it, { small: true }));
-    const play = playButton(() => ({ voicings: voiceProgression(analyzeAll(ex.chords, key).map((i) => i.chord), styleFor(genre)), bars: ex.bars ?? ex.chords.map(() => 1), pattern: patternFor(genre), instrument: instrumentFor(genre) }),
+    const play = playButton(() => ({ voicings: voiceProgression(analyzeAll(ex.chords, key).map((i) => i.chord), styleFor(genre)), bars: ex.bars ?? ex.chords.map(() => 1), pattern: patternFor(genre), instrument: instrumentFor(genre), title: ex.name, items: analyzeAll(ex.chords, key), genre }),
       (i) => pills.forEach((p, k) => p.classList.toggle('active', k === i)), `Ascolta ${ex.name}`, 'sm');
     // il tasto play sta dentro la card ma non deve aprire il link
     play.addEventListener('click', (e) => e.preventDefault());

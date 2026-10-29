@@ -571,3 +571,31 @@ button[data-chord-tip] { cursor: pointer; }
 .chord-pop-name { font-size: 1.3rem; font-weight: 800; line-height: 1.1; font-family: var(--display); }
 .chord-pop .diagram { width: 130px; height: auto; margin: 4px 0 2px; }
 .chord-pop-voicing { font-weight: 600; }
+
+/* ───────────────────────── Lettore fisso */
+body.has-player { padding-bottom: 110px; }
+.player-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 0 clamp(8px, 2vw, 24px) 14px; pointer-events: none; }
+.player-bar[hidden] { display: none; }
+.player-inner {
+  pointer-events: auto; max-width: 1280px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px;
+  padding: 12px 18px; background: var(--ink); color: var(--bg); border-radius: 22px; box-shadow: 0 8px 30px rgb(0 0 0 / 25%);
+}
+.player-inner .play-round { width: 52px; height: 52px; box-shadow: none; border-color: var(--S); }
+.player-title { display: flex; flex-direction: column; min-width: 120px; line-height: 1.25; }
+.player-title span { font-size: 0.8rem; opacity: 0.75; }
+.player-inner .pills { gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding: 4px; max-width: 100%; }
+.player-inner .pill { box-shadow: none; }
+.player-inner .pill.active { outline-color: var(--bg); }
+.player-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+.player-controls select { background: transparent; color: var(--bg); border-color: color-mix(in srgb, var(--bg) 45%, var(--ink)); min-height: 40px; max-width: 250px; }
+.player-controls select option { color: var(--text); background: var(--surface); }
+.player-controls .btn { background: transparent; color: var(--bg); border-color: color-mix(in srgb, var(--bg) 45%, var(--ink)); }
+.player-controls .btn.active { background: var(--bg); color: var(--ink); }
+.player-controls .round { width: 40px; height: 40px; background: transparent; color: var(--bg); border-color: color-mix(in srgb, var(--bg) 45%, var(--ink)); }
+.player-bpm { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+.player-bpm input { width: 110px; accent-color: var(--S); }
+@media (max-width: 720px) {
+  body.has-player { padding-bottom: 210px; }
+  .player-controls { margin-left: 0; }
+  .player-bpm input { width: 80px; }
+}

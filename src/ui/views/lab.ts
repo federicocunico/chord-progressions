@@ -114,7 +114,7 @@ export function labView(route: Route): HTMLElement {
     };
     const playArgs = (chords: string[]) => () => {
       const its = analyzeAll(chords, key);
-      return { voicings: voiceProgression(its.map((i) => i.chord), style), bars: chords.map(() => 1), pattern: patternFor(genre), instrument: instrumentFor(genre) };
+      return { voicings: voiceProgression(its.map((i) => i.chord), style), bars: chords.map(() => 1), pattern: patternFor(genre), instrument: instrumentFor(genre), title: 'La tua progressione', items: its, genre };
     };
 
     // ── la progressione, con la corsia della scala sotto
