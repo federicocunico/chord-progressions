@@ -3,6 +3,8 @@ import type { Voicing } from '../../guitar/voicings';
 import { OPEN_PC } from '../../guitar/shapes';
 import { noteName, spellPc, mod } from '../../theory/notes';
 import type { HarmonicFunction } from '../../theory/analysis';
+import type { Chord } from '../../theory/chords';
+import { tip } from './chordTip';
 
 /** Diagramma di un accordo per chitarra (vista verticale, 6ª corda a sinistra). */
 export function chordDiagram(v: Voicing, opts: { rootPc: number; size?: 'sm' | 'md'; title?: string; flats?: boolean }): SVGSVGElement {
@@ -79,6 +81,7 @@ export interface CirclePoint {
   family: 'major' | 'minor' | 'dim';
   fn: HarmonicFunction;
   label: string;
+  chord?: Chord;
 }
 
 /** Circolo delle quinte con la tonalità evidenziata e il percorso della progressione. */
@@ -130,7 +133,8 @@ export function circleOfFifths(opts: { tonicPc: number; minor: boolean; path: Ci
     const n = used.get(k) ?? 0;
     used.set(k, n + 1);
     const pt = opts.path[i];
-    g.push(s('circle', { cx: px, cy: py, r: 15, class: `cof-node fn-${pt.fn}${opts.activeIndex === i ? ' active' : ''}` }));
+    const node = s('circle', { cx: px, cy: py, r: 15, class: `cof-node fn-${pt.fn}${opts.activeIndex === i ? ' active' : ''}` });
+    g.push(pt.chord ? tip(node, pt.chord) : node);
     g.push(s('text', { x: px + 11 + n * 9, y: py - 10, class: 'cof-step', 'text-anchor': 'middle' }, String(i + 1)));
   });
   return s('svg', { viewBox: '0 0 320 320', class: 'circle', role: 'img', 'aria-label': 'Circolo delle quinte con il percorso della progressione' },
@@ -180,7 +184,7 @@ export function fretboard(opts: { scalePcs: number[]; tonicPc: number; chordPcs?
 }
 
 /** Curva della tensione armonica. */
-export function tensionCurve(points: { tension: number; fn: HarmonicFunction; label: string }[], activeIndex?: number): SVGSVGElement {
+export function tensionCurve(points: { tension: number; fn: HarmonicFunction; label: string; chord?: Chord }[], activeIndex?: number): SVGSVGElement {
   const step = 64;
   const w = Math.max(points.length, 2) * step;
   const hgt = 120;
@@ -202,8 +206,9 @@ export function tensionCurve(points: { tension: number; fn: HarmonicFunction; la
     g.push(s('path', { d, class: 'tc-line' }));
   }
   points.forEach((p, i) => {
-    g.push(s('circle', { cx: xs(i), cy: y(p.tension), r: activeIndex === i ? 8 : 6, class: `tc-dot fn-${p.fn}` }));
-    g.push(s('text', { x: xs(i), y: hgt - 6, class: 'tc-label', 'text-anchor': 'middle' }, p.label));
+    const dot = s('circle', { cx: xs(i), cy: y(p.tension), r: activeIndex === i ? 8 : 6, class: `tc-dot fn-${p.fn}` });
+    const lab = s('text', { x: xs(i), y: hgt - 6, class: 'tc-label', 'text-anchor': 'middle' }, p.label);
+    g.push(p.chord ? tip(dot, p.chord) : dot, p.chord ? tip(lab, p.chord) : lab);
   });
   return s('svg', { viewBox: `0 0 ${w} ${hgt}`, class: 'tension', role: 'img', 'aria-label': 'Curva della tensione armonica' }, g);
 }

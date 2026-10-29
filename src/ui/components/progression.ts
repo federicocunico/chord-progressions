@@ -1,5 +1,6 @@
 import { h } from '../dom';
 import { chordDiagram } from './diagrams';
+import { tip } from './chordTip';
 import { parseRoman, realize, prettyRoman, type Key, type RomanChord } from '../../theory/roman';
 import { chordSymbol, type Chord } from '../../theory/chords';
 import { analyzeChord, type ChordAnalysis } from '../../theory/analysis';
@@ -32,9 +33,10 @@ export function pill(item: ChordItem, opts: { small?: boolean; changed?: boolean
   const a = item.analysis;
   const cls = ['pill', `fn-${a.fn}`, a.borrowed ? 'borrowed' : '', a.secondary ? 'secondary' : '', opts.small ? 'small' : '', opts.changed ? 'changed' : '', opts.active ? 'active' : ''];
   const tag = opts.onClick ? 'button' : 'span';
-  return h(tag as 'span', { class: cls.join(' '), title: `${prettyRoman(item.rc)} · ${a.label}`, onclick: opts.onClick, type: opts.onClick ? 'button' : undefined },
+  const el = h(tag as 'span', { class: cls.join(' '), tabindex: opts.onClick ? undefined : '0', onclick: opts.onClick, type: opts.onClick ? 'button' : undefined },
     h('span', { class: 'pill-sym' }, item.symbol),
     h('span', { class: 'pill-num' }, prettyRoman(item.rc)));
+  return tip(el, item.chord, undefined, `${prettyRoman(item.rc)} · ${a.label}`);
 }
 
 export function legend(): HTMLElement {
@@ -136,10 +138,10 @@ export interface CardOptions {
 export function progressionCard(o: CardOptions): HTMLElement {
   const items = analyzeAll(o.chords, o.key);
   const voicings = voiceProgression(items.map((i) => i.chord), o.style);
-  const pills = items.map((it) => pill(it));
+  const pills = items.map((it, i) => tip(pill(it), it.chord, voicings[i], `${prettyRoman(it.rc)} · ${it.analysis.label}`));
   const flats = o.key.tonic.acc < 0;
   const diagrams = h('div', { class: 'mini-diagrams' },
-    items.map((it, i) => h('div', { class: 'mini' }, chordDiagram(voicings[i], { rootPc: it.rootPc, size: 'sm', title: it.symbol, flats }), h('span', null, it.symbol))));
+    items.map((it, i) => tip(h('div', { class: 'mini', tabindex: '0' }, chordDiagram(voicings[i], { rootPc: it.rootPc, size: 'sm', title: it.symbol, flats }), h('span', null, it.symbol)), it.chord, voicings[i])));
   const highlight = (i: number | null) => pills.forEach((p, k) => p.classList.toggle('active', k === i));
   return h('article', { class: 'card prog-card' },
     h('header', null,

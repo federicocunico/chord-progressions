@@ -1,4 +1,5 @@
 import { h } from '../dom';
+import { tip, chordRef } from '../components/chordTip';
 import { keyControls } from '../components/controls';
 import { analyzeAll, pill, legend } from '../components/progression';
 import { chordDiagram, fretboard } from '../components/diagrams';
@@ -70,8 +71,8 @@ export function theoryView(): HTMLElement {
       h('div', { class: 'diatonic-table' },
         tItems.map((it, i) => h('div', { class: `diatonic fn-${it.analysis.fn}` },
           pill(it),
-          h('span', { class: 'small muted' }, sItems[i].symbol),
-          chordDiagram(voic[i], { rootPc: it.rootPc, size: 'sm', title: it.symbol }),
+          chordRef(sItems[i].chord, sItems[i].symbol, voic[i]),
+          tip(chordDiagram(voic[i], { rootPc: it.rootPc, size: 'sm', title: it.symbol }), it.chord, voic[i]),
           h('span', { class: 'small' }, it.analysis.label)))),
       fretboard({ scalePcs: scalePcs(pc(key.tonic), mode.scale), tonicPc: pc(key.tonic), flats: key.tonic.acc < 0, labels: 'degrees' })),
 

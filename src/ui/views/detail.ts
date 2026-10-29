@@ -1,6 +1,7 @@
 import { h, field, segmented } from '../dom';
 import { tonicSelect, modeControl, genreSelect, styleSelect, patternSelect, bpmControl, instrumentSelect, midiOutControl } from '../components/controls';
 import { analyzeAll, pill, playButton, midiButton, progressionCard, stars, legend, type ChordItem } from '../components/progression';
+import { tip, chordRef } from '../components/chordTip';
 import { chordDiagram, circleOfFifths, fretboard, tensionCurve } from '../components/diagrams';
 import { settings, updateSettings, styleFor, patternFor, instrumentFor, context, updateContext } from '../state';
 import { PROGRESSION_MAP } from '../../data/progressions';
@@ -133,11 +134,11 @@ export function detailView(route: Route): HTMLElement {
       },
         h('header', null,
           h('span', { class: 'step' }, String(i + 1)),
-          h('div', null, h('h3', null, shownSym), h('span', { class: 'num' }, prettyRoman(it.rc))),
+          h('div', null, h('h3', null, tip(h('span', { class: 'chord-ref', tabindex: '0' }, shownSym), it.chord, v)), h('span', { class: 'num' }, prettyRoman(it.rc))),
           bars[i] !== 1 ? h('span', { class: 'badge' }, `${bars[i]} batt.`) : null),
         h('p', { class: 'fn-label' }, it.analysis.label),
         h('button', { type: 'button', class: 'diagram-btn', title: 'Ascolta questo accordo', onclick: () => void player.preview(voicingMidi(v), instrument) },
-          chordDiagram(v, { rootPc: it.rootPc, title: it.symbol, flats })),
+          tip(chordDiagram(v, { rootPc: it.rootPc, title: it.symbol, flats }), it.chord, v)),
         h('p', { class: 'voicing-label' }, v.label),
         list.length > 1 ? h('div', { class: 'alt-nav' },
           h('button', { type: 'button', 'aria-label': 'Forma precedente', onclick: () => cycle(-1) }, '‹'),
@@ -176,12 +177,12 @@ export function detailView(route: Route): HTMLElement {
         h('div', { class: 'panel' },
           h('h3', null, 'Tensione armonica'),
           h('p', { class: 'muted small' }, 'Quanto ogni accordo "chiede" di andare avanti. Le belle progressioni alternano tensione e riposo.'),
-          tensionCurve(items.map((it) => ({ tension: it.analysis.tension, fn: it.analysis.fn, label: it.symbol })), playing ?? undefined),
+          tensionCurve(items.map((it) => ({ tension: it.analysis.tension, fn: it.analysis.fn, label: it.symbol, chord: it.chord })), playing ?? undefined),
           h('h3', null, 'Sul circolo delle quinte'),
           h('p', { class: 'muted small' }, 'Esterno: accordi maggiori · centro: minori · interno: diminuito. Lo spicchio evidenziato sono gli accordi della tonalità: più il percorso esce dallo spicchio, più la progressione è "colorata".'),
           circleOfFifths({
             tonicPc: pc(k.tonic), minor: MODES[mode].tonality === 'minor', flats,
-            path: items.map((it) => ({ rootPc: it.rootPc, family: fam(it), fn: it.analysis.fn, label: it.symbol })),
+            path: items.map((it) => ({ rootPc: it.rootPc, family: fam(it), fn: it.analysis.fn, label: it.symbol, chord: it.chord })),
           }))));
 
     // ── scale
@@ -207,9 +208,9 @@ export function detailView(route: Route): HTMLElement {
           })))),
       h('div', { class: 'panel' },
         h('div', { class: 'controls-row' },
-          segmented(scaleView, [{ value: 'key', label: 'Scala della tonalità' }, { value: 'pent', label: 'Pentatonica' }, { value: 'chord', label: `Scala su ${sel.symbol}` }], (v) => { scaleView = v; render(); }),
+          segmented(scaleView, [{ value: 'key', label: 'Scala della tonalità' }, { value: 'pent', label: 'Pentatonica' }, { value: 'chord', label: `Scala su ${sel.symbol}`, chord: sel.chord }], (v) => { scaleView = v; render(); }),
           segmented(labels, [{ value: 'notes', label: 'Note' }, { value: 'degrees', label: 'Gradi' }], (v) => { labels = v; render(); })),
-        h('p', { class: 'muted small' }, `${fbScale.name}. In evidenza (colorate) le note di ${sel.symbol}: sono le più sicure su cui fermarsi mentre suona questo accordo.`),
+        h('p', { class: 'muted small' }, `${fbScale.name}. In evidenza (colorate) le note di `, chordRef(sel.chord), ': sono le più sicure su cui fermarsi mentre suona questo accordo.'),
         fretboard({ scalePcs: scalePcs(fbScale.tonicPc, fbScale.scale), tonicPc: fbScale.tonicPc, chordPcs: chordPcs(sel.chord), chordRoot: sel.rootPc, fn: sel.analysis.fn, flats, labels })));
 
     // ── sostituzioni

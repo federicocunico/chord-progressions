@@ -1,6 +1,7 @@
 import { h, segmented } from '../dom';
 import { keyControls } from '../components/controls';
 import { analyzeAll, pill, playButton, midiButton, legend, type ChordItem } from '../components/progression';
+import { chordRef } from '../components/chordTip';
 import { circleOfFifths } from '../components/diagrams';
 import { context, currentKey, styleFor, patternFor, instrumentFor } from '../state';
 import { MODES, harmonize } from '../../theory/scales';
@@ -79,7 +80,7 @@ export function mapView(): HTMLElement {
       built.length ? h('div', { class: 'pills' }, items.map((it, i) => h('span', { class: 'built' }, pill(it),
         h('button', { type: 'button', class: 'x', 'aria-label': 'Rimuovi', onclick: () => { built = built.filter((_, k) => k !== i); render(); } }, '×'))))
         : h('p', { class: 'empty' }, 'Tocca un accordo qui sotto per iniziare (di solito si parte dalla tonica). Dopo ogni accordo ti mostro i prossimi più probabili per il genere scelto.'),
-      last ? h('div', { class: 'next' }, h('span', { class: 'muted small' }, 'Dopo ', h('strong', null, items[items.length - 1].symbol), ' di solito arriva: '),
+      last ? h('div', { class: 'next' }, h('span', { class: 'muted small' }, 'Dopo ', chordRef(items[items.length - 1].chord, items[items.length - 1].symbol), ' di solito arriva: '),
         sugg.slice(0, 5).map((s) => chordBtn(s.token))) : null,
       h('footer', null,
         built.length ? playButton(() => {
@@ -117,7 +118,7 @@ export function mapView(): HTMLElement {
             tonicPc: pc(key.tonic), minor: tonality === 'minor', flats: key.tonic.acc < 0,
             path: items.map((it) => {
               const f = QUALITIES[it.chord.quality].family;
-              return { rootPc: it.rootPc, family: f === 'minor' ? 'minor' : f === 'diminished' ? 'dim' : 'major', fn: it.analysis.fn, label: it.symbol };
+              return { rootPc: it.rootPc, family: f === 'minor' ? 'minor' : f === 'diminished' ? 'dim' : 'major', fn: it.analysis.fn, label: it.symbol, chord: it.chord };
             }),
           }),
           h('p', { class: 'muted small' }, 'Gli accordi vicini sul cerchio condividono molte note: muoversi di un passo è sempre morbido, saltare lontano crea sorpresa.'))));

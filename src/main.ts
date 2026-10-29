@@ -8,6 +8,7 @@ import { detailView } from './ui/views/detail';
 import { mapView } from './ui/views/map';
 import { genresView, genreDetailView } from './ui/views/genres';
 import { theoryView } from './ui/views/theory';
+import { initChordTips, autolinkChords, hideChordTip } from './ui/components/chordTip';
 import { stopAll } from './ui/components/progression';
 import type { GenreId } from './data/genres';
 
@@ -67,7 +68,9 @@ function render(fromRoute: boolean) {
     case 'teoria': view = theoryView(); break;
     default: view = composeView();
   }
+  hideChordTip();
   mount(main, view);
+  autolinkChords(main);
   renderNav(path === 'prog' ? '' : path);
   const full = r.path.join('/');
   if (fromRoute && full !== lastPath) {
@@ -86,6 +89,13 @@ function renderShell() {
         h('a', { href: 'https://github.com/federicocunico/chord-progressions', rel: 'noopener', target: '_blank' }, 'Codice su GitHub'), '.')));
 }
 
+initChordTips();
+let linkQueued = false;
+new MutationObserver(() => {
+  if (linkQueued) return;
+  linkQueued = true;
+  queueMicrotask(() => { linkQueued = false; autolinkChords(document.getElementById('app')!); });
+}).observe(document.getElementById('app')!, { childList: true, subtree: true });
 renderShell();
 render(true);
 window.addEventListener('hashchange', () => {

@@ -399,3 +399,19 @@ table.simple td { padding: 8px; border-bottom: 1px solid var(--border); }
 .btn.play.loading .ico { display: inline-block; animation: pulse 0.9s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.3; } }
 .midi-out { display: flex; align-items: center; gap: 6px; min-height: 40px; }
+
+/* ───────────────────────── Diagramma accordo al mouseover */
+[data-chord-tip] { cursor: help; }
+button[data-chord-tip] { cursor: pointer; }
+.chord-ref { font-weight: 700; border-bottom: 1px dotted var(--accent); border-radius: 2px; }
+.chord-ref:hover, .chord-ref:focus-visible { background: color-mix(in srgb, var(--accent) 16%, transparent); outline: none; }
+.chord-pop {
+  position: fixed; z-index: 1000; pointer-events: none; max-width: 220px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow), 0 12px 32px rgb(0 0 0 / 22%); padding: 10px 14px 12px;
+}
+.chord-pop[hidden] { display: none; }
+.chord-pop-body { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+.chord-pop-name { font-size: 1.25rem; font-weight: 800; line-height: 1.1; }
+.chord-pop .diagram { width: 130px; height: auto; margin: 4px 0 2px; }
+.chord-pop-voicing { font-weight: 600; }

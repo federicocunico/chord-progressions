@@ -1,3 +1,5 @@
+import type { Chord } from '../theory/chords';
+import { tip } from './components/chordTip';
 export type Child = Node | string | number | null | undefined | false | Child[];
 type Props = Record<string, unknown> | null | undefined;
 
@@ -86,10 +88,13 @@ export function field(label: string, control: Element, hint?: string): HTMLEleme
   return h('label', { class: 'field' }, h('span', { class: 'field-label' }, label), control, hint ? h('span', { class: 'field-hint' }, hint) : null);
 }
 
-export function segmented<T extends string>(value: T, options: { value: T; label: string }[], onChange: (v: T) => void, label?: string): HTMLElement {
+export function segmented<T extends string>(value: T, options: { value: T; label: string; chord?: Chord }[], onChange: (v: T) => void, label?: string): HTMLElement {
   return h('div', { class: 'segmented', role: 'radiogroup', 'aria-label': label ?? '' },
-    options.map((o) => h('button', {
-      type: 'button', role: 'radio', 'aria-checked': String(o.value === value),
-      class: o.value === value ? 'active' : '', onclick: () => onChange(o.value),
-    }, o.label)));
+    options.map((o) => {
+      const b = h('button', {
+        type: 'button', role: 'radio', 'aria-checked': String(o.value === value),
+        class: o.value === value ? 'active' : '', onclick: () => onChange(o.value),
+      }, o.label);
+      return o.chord ? tip(b, o.chord) : b;
+    }));
 }
