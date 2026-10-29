@@ -94,7 +94,7 @@ describe('analisi', () => {
   it('cadenze', () => {
     expect(describeMove('V7', 'I', C).title).toContain('perfetta');
     expect(describeMove('V', 'vi', C).title).toContain('inganno');
-    expect(describeMove('bVII', 'i', makeKey('A', 'minor')).title).toContain('eolica');
+    expect(describeMove('bVII', 'i', makeKey('A', 'minor')).title).toContain('sottotonica');
     expect(describeMove('IV', 'iv', C).title).toContain('cambio di modo');
   });
   it('scala per accordo in prestito', () => {

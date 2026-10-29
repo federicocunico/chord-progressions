@@ -63,9 +63,11 @@ export function theoryView(): HTMLElement {
 
   return h('div', { class: 'view theory' },
     h('section', { class: 'hero' },
-      h('h1', null, 'Teoria in pratica'),
+      h('span', { class: 'kicker' }, 'Capisci'),
+      h('h1', null, 'La teoria in pratica'),
       h('p', { class: 'lead' }, 'Il minimo indispensabile per capire perché una progressione funziona, spiegato con la tonalità che hai scelto. Niente pentagramma: solo accordi, colori e forme.')),
-    h('nav', { class: 'toc panel' }, toc.map(([id, t]) => h('a', { href: `#/teoria`, onclick: (e: Event) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); } }, t))),
+    h('nav', { class: 'toc panel' }, toc.map(([id, t]) => h('a', { href: `#/capisci`, onclick: (e: Event) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); } }, t)),
+      h('a', { href: href('generi') }, 'Generi e stili →')),
     h('section', { class: 'panel controls' }, keyControls({ genre: false })),
 
     h('section', { id: 'scala', class: 'prose' },
@@ -96,9 +98,9 @@ export function theoryView(): HTMLElement {
       h('h2', null, '3. Le funzioni: casa, viaggio, tensione'),
       h('p', null, 'Ogni accordo ha un "ruolo". Capire i ruoli è capire l\'armonia:'),
       h('div', { class: 'fn-explain' },
-        h('div', { class: 'panel fn-T' }, h('h3', null, 'T — Tonica'), h('p', null, rt('Casa, riposo. [I], [vi], [iii] in maggiore; [i], [♭III] in minore. Finire qui dà senso di conclusione.'))),
-        h('div', { class: 'panel fn-S' }, h('h3', null, 'S — Sottodominante'), h('p', null, rt('Ci si allontana da casa. [IV], [ii] (e in prestito [iv], [♭VI], [♭VII]). Prepara la tensione.'))),
-        h('div', { class: 'panel fn-D' }, h('h3', null, 'D — Dominante'), h('p', null, rt('Tensione che chiede di tornare: [V], [V7], [vii°]. Contiene la sensibile, la nota che "vuole" salire alla tonica.')))),
+        h('div', { class: 'panel fn-T' }, h('h3', null, 'Casa — tonica'), h('p', null, rt('Riposo: qui la canzone si sente arrivata. [I] è la casa piena di luce, [vi] la casa in ombra; [iii] fa da ponte verso [vi] e [IV]. In minore: [i] e [♭III]. Finire qui dà senso di conclusione.'))),
+        h('div', { class: 'panel fn-S' }, h('h3', null, 'Viaggio — sottodominante'), h('p', null, rt('Ci si allontana da casa e si prende slancio: [IV], [ii] (e in prestito [iv], [♭VI], [♭VII]). Può preparare la tensione o, molto spesso nel rock e nel pop, tornare direttamente a casa ([IV] → [I]).'))),
+        h('div', { class: 'panel fn-D' }, h('h3', null, 'Tensione — dominante'), h('p', null, rt('Tensione che chiede di tornare: [V], [V7], [vii°]. Contiene la sensibile, la nota che "vuole" salire alla tonica.')))),
       h('p', null, rt('La frase tipica è T → S → D → T. Le progressioni pop spesso la "ruotano" o la interrompono per creare emozione (es. [V] → [vi], la cadenza d\'inganno).'))),
 
     h('section', { id: 'cadenze', class: 'prose' },
@@ -108,7 +110,7 @@ export function theoryView(): HTMLElement {
         h('tbody', null, [
           ['Perfetta', '[V] – [I]', 'Punto fermo, conclusione'], ['Plagale', '[IV] – [I]', '"Amen", morbida'], ['Plagale minore', '[iv] – [I]', 'Dolce-amara'],
           ['D\'inganno', '[V] – [vi]', 'Sorpresa, la frase continua'], ['Sospesa', '… – [V]', 'Virgola, domanda'], ['Eolica / rock', '[♭VI] – [♭VII] – [i]', 'Epica, metal'],
-          ['"Mario"', '[♭VI] – [♭VII] – [I]', 'Trionfale'], ['Misolidia', '[♭VII] – [I]', 'Rock classico'], ['Frigia', '[♭II] – [i]', 'Scura, flamenco/metal'], ['Andalusa', '[i] – [♭VII] – [♭VI] – [V]', 'Spagnola, drammatica'],
+          ['"Mario"', '[♭VI] – [♭VII] – [I]', 'Trionfale'], ['Misolidia', '[♭VII] – [I]', 'Rock classico'], ['Risoluzione frigia', '[♭II] – [i]', 'Scura, flamenco/metal'], ['Frigia (classica)', '[iv/♭3] – [V]', 'Semicadenza scura, barocca'], ['Andalusa', '[i] – [♭VII] – [♭VI] – [V]', 'Spagnola, drammatica'],
         ].map(([a, b, c]) => h('tr', null, h('td', null, a), h('td', null, rt(b)), h('td', null, c)))))),
 
     h('section', { id: 'modi', class: 'prose' },

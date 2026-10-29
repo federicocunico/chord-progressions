@@ -1,6 +1,6 @@
 import { type Note, pc, mod, noteName, spellPc } from './notes';
 import { QUALITIES, chordPcs, chordTones, type Chord } from './chords';
-import { MODES, SCALES, scalePcs, scaleNotes, type ScaleId } from './scales';
+import { MODES, SCALES, scalePcs, scaleNotes, type ScaleId, type ModeId } from './scales';
 import {
   type RomanChord, type Key, parseRoman, realize, rootOffset, isDiatonic, formatRoman, formatDegree,
 } from './roman';
@@ -10,7 +10,10 @@ export type HarmonicFunction = 'T' | 'S' | 'D';
 export interface ChordAnalysis {
   fn: HarmonicFunction;
   secondary: boolean;
+  /** Fuori tonalità ma preso dal modo parallelo (interscambio modale). */
   borrowed: boolean;
+  /** Fuori tonalità e non preso in prestito: dominanti secondarie, sostituti di tritono, cromatismi. */
+  chromatic: boolean;
   /** Descrizione breve: "Tonica", "Dominante secondaria → vi", … */
   label: string;
   tension: number; // 0..6
@@ -23,6 +26,9 @@ export const FUNCTION_NAMES: Record<HarmonicFunction, string> = {
 };
 
 const toRc = (n: string | RomanChord): RomanChord => (typeof n === 'string' ? parseRoman(n) : n);
+
+/** Modi sulla stessa tonica da cui un accordo può essere "preso in prestito". */
+const PARALLEL_MODES: ModeId[] = ['major', 'minor', 'dorian', 'mixolydian', 'phrygian', 'lydian'];
 
 export function analyzeChord(input: string | RomanChord, key: Key): ChordAnalysis {
   const rc = toRc(input);
@@ -38,6 +44,7 @@ export function analyzeChord(input: string | RomanChord, key: Key): ChordAnalysi
       fn: isPre ? 'S' : 'D',
       secondary: true,
       borrowed: false,
+      chromatic: true,
       label: isPre ? `Preparazione secondaria → [${t}]` : `Dominante secondaria → [${t}]`,
       tension: isPre ? 3.5 : 4.5,
     };
@@ -51,7 +58,8 @@ export function analyzeChord(input: string | RomanChord, key: Key): ChordAnalysi
     case 0: fn = 'T'; tension = fam === 'dominant' ? 2.2 : 0.6; break;
     case 1:
       if (fam === 'dominant') { fn = 'D'; tension = 5; label = 'Sostituto di tritono'; }
-      else { fn = 'S'; tension = 4; label = minorKey ? 'Napoletana / frigio' : 'Napoletana'; }
+      else if (fam === 'major') { fn = 'S'; tension = 4; label = minorKey ? 'Napoletana / frigio' : 'Napoletana'; }
+      else { fn = 'S'; tension = 4; label = '[♭ii] minore (cromatico)'; }
       break;
     case 2:
       if (majorish) { fn = 'D'; tension = 4.2; label = 'Dominante della dominante ([V/V])'; }
@@ -59,8 +67,9 @@ export function analyzeChord(input: string | RomanChord, key: Key): ChordAnalysi
       break;
     case 3: fn = 'T'; tension = 1.6; break;
     case 4:
-      if (majorish) { fn = 'D'; tension = 4.2; label = 'Dominante di [vi] ([V/vi])'; }
-      else { fn = 'T'; tension = 2; }
+      if (majorish && !minorKey) { fn = 'D'; tension = 4.2; label = 'Dominante di [vi] ([V/vi])'; }
+      else if (majorish) { fn = 'T'; tension = 3; label = 'Mediante cromatica'; }
+      else { fn = 'T'; tension = 2; label = 'Mediante: ponte verso [vi] e [IV]'; }
       break;
     case 5: fn = 'S'; tension = fam === 'minor' ? 3.4 : 3; break;
     case 6: fn = 'D'; tension = 5.5; label = fam === 'diminished' ? 'Diminuito di passaggio' : 'Tritono'; break;
@@ -70,19 +79,22 @@ export function analyzeChord(input: string | RomanChord, key: Key): ChordAnalysi
       if (majorish && !minorKey) { fn = 'D'; tension = 4.2; label = 'Dominante di [ii] ([V/ii])'; }
       else { fn = minorKey ? 'S' : 'T'; tension = minorKey ? 3 : 1.4; }
       break;
-    case 10: fn = minorKey ? 'D' : 'S'; tension = minorKey ? 3.8 : 3.4; label = 'Sottotonica ([♭VII])'; break;
+    case 10: fn = minorKey ? 'D' : 'S'; tension = minorKey ? 3.8 : 3.4; label = minorKey ? 'Sottotonica ([♭VII]): tensione morbida' : 'Sottotonica ([♭VII]): casa vicina'; break;
     default: fn = 'D'; tension = 5.4; label = 'Sensibile'; break;
   }
   if (fam === 'diminished') tension = Math.max(tension, 5);
   if (q.tones.length > 3 && fam !== 'dominant') tension += 0.3;
-  const borrowed = key.mode !== 'blues' && !isDiatonic(rc, key);
-  if (borrowed) tension += 0.5;
+  const outside = key.mode !== 'blues' && !isDiatonic(rc, key);
+  const borrowed = outside && PARALLEL_MODES.some((m) => m !== key.mode && isDiatonic(rc, { tonic: key.tonic, mode: m }));
+  const chromatic = outside && !borrowed;
+  if (outside) tension += 0.5;
   const base = label ?? FUNCTION_NAMES[fn];
   return {
     fn,
     secondary: false,
     borrowed,
-    label: borrowed ? `${base} · prestito` : base,
+    chromatic,
+    label: borrowed ? `${base} · prestito` : chromatic && !label ? `${base} · cromatico` : base,
     tension: Math.min(6, tension),
   };
 }
@@ -132,24 +144,27 @@ export function describeMove(aIn: string | RomanChord, bIn: string | RomanChord,
     title = 'Risoluzione della dominante secondaria';
     text = `${pa} è la "dominante" di ${pb}: per un attimo ${pb} sembra la nuova tonica.`;
   } else if (oa === 7 && ob === 0 && qa.family !== 'minor') {
-    title = 'Cadenza perfetta ([V] → [I])';
+    title = `Cadenza perfetta (${pa} → ${pb})`;
     text = 'La risoluzione più forte in assoluto: tensione che torna a casa.';
   } else if (oa === 7 && ob === 9 && qb.family === 'minor' && !minorKey) {
-    title = 'Cadenza d\'inganno ([V] → [vi])';
+    title = `Cadenza d'inganno (${pa} → ${pb})`;
     text = 'L\'orecchio si aspetta la tonica e invece arriva il relativo minore: sorpresa malinconica.';
-  } else if (oa === 7 && ob === 8 && minorKey) {
-    title = 'Cadenza d\'inganno in minore ([V] → [♭VI])';
-    text = 'Invece di tornare a [i] si cade su [♭VI]: drammatico, tipico del metal sinfonico.';
+  } else if (oa === 7 && ob === 8 && minorKey && qa.family !== 'minor') {
+    title = `Cadenza d'inganno in minore (${pa} → ${pb})`;
+    text = 'Invece di tornare a [i] si cade su [♭VI]: drammatico, classico in ogni minore (e nel metal sinfonico).';
   } else if (oa === 11 && ob === 0) {
     title = 'Sensibile → tonica';
     text = 'La sensibile sale di semitono alla tonica: risoluzione decisa.';
   } else if (oa === 5 && ob === 0 && interval === 7) {
-    title = qa.family === 'minor' ? 'Cadenza plagale minore ([iv] → [I])' : 'Cadenza plagale ([IV] → [I])';
-    text = qa.family === 'minor'
-      ? 'Il [iv] preso in prestito dal minore rende il ritorno a casa dolce-amaro (gospel, Beatles, Radiohead).'
-      : 'La cadenza "Amen": ritorno a casa morbido, senza la spinta della dominante.';
+    const dorian = key.mode === 'dorian' && qa.family !== 'minor';
+    title = qa.family === 'minor' && !minorKey ? `Cadenza plagale minore (${pa} → ${pb})` : dorian ? `Cadenza plagale dorica (${pa} → ${pb})` : `Cadenza plagale (${pa} → ${pb})`;
+    text = minorKey
+      ? (dorian ? 'Il [IV] maggiore della dorica torna alla tonica minore: luminoso e un po\' folk.' : 'Ritorno a casa morbido, senza la spinta della sensibile.')
+      : qa.family === 'minor'
+        ? 'Il [iv] preso in prestito dal minore rende il ritorno a casa dolce-amaro (gospel, Beatles, Radiohead).'
+        : 'La cadenza "Amen": ritorno a casa morbido, senza la spinta della dominante.';
   } else if (oa === 10 && ob === 0) {
-    title = minorKey ? 'Cadenza eolica ([♭VII] → [i])' : 'Cadenza misolidia ([♭VII] → [I])';
+    title = minorKey ? `Risoluzione dalla sottotonica (${pa} → ${pb})` : `Cadenza misolidia (${pa} → ${pb})`;
     text = minorKey
       ? 'Risoluzione "rock" in minore, senza sensibile: fiera ed epica (metal, folk).'
       : 'Il suono del rock classico: risoluzione aperta, senza la sensibile.';
@@ -157,11 +172,11 @@ export function describeMove(aIn: string | RomanChord, bIn: string | RomanChord,
     title = '[♭VI] → [♭VII]: la rampa epica';
     text = 'Due accordi maggiori che salgono di un tono: preparano il ritorno trionfale alla tonica.';
   } else if (oa === 1 && ob === 0) {
-    title = qa.family === 'dominant' ? 'Sostituzione di tritono → tonica' : 'Cadenza frigia ([♭II] → [I])';
+    title = qa.family === 'dominant' ? 'Sostituzione di tritono → tonica' : `Risoluzione frigia (${pa} → ${pb})`;
     text = qa.family === 'dominant'
       ? 'La dominante sostituita scende di semitono alla tonica: suono jazz sofisticato.'
       : 'Discesa di semitono sulla tonica: oscura, flamenco e metal.';
-  } else if (oa === 2 && ob === 7 && qa.family === 'minor') {
+  } else if (oa === 2 && ob === 7 && (qa.family === 'minor' || a.quality === 'm7b5')) {
     title = '[ii] → [V]: preparazione della dominante';
     text = 'Il cuore del jazz: il [ii] prepara la dominante per quinta discendente.';
   } else if (oa === ob && qa.family !== qb.family) {
@@ -169,7 +184,11 @@ export function describeMove(aIn: string | RomanChord, bIn: string | RomanChord,
     text = 'Stesso basso, cambia la terza: effetto luce/ombra immediato.';
   }
 
-  const [it, itx] = INTERVAL_TEXT[interval];
+  let [it, itx] = INTERVAL_TEXT[interval];
+  // le terze tra accordi della tonalità sono "parenti", non mediante cromatiche
+  if ((interval === 3 || interval === 4 || interval === 8 || interval === 9) && isDiatonic(a, key) && isDiatonic(b, key)) {
+    itx = 'Salto di terza tra accordi parenti: 2 note in comune, passaggio morbido.';
+  }
   if (!title) {
     title = `${FUNCTION_NAMES[fa.fn]} → ${FUNCTION_NAMES[fb.fn]} · ${it}`;
     text = itx;

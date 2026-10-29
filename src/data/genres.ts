@@ -65,15 +65,15 @@ export const GENRES: GenreDef[] = [
   G({ id: 'bluesrock', name: 'Blues rock / Hard rock', parent: 'rock', description: 'Il blues amplificato: riff pentatonici, [I]–[♭III]–[IV], settime di dominante e cadenze eoliche.', scales: ['minorPentatonic', 'blues', 'mixolydian'], flavor: 'power', voicing: 'auto', tonality: 'both', bpm: [90, 140], hue: 25,
     tips: ['Riff sulla pentatonica minore anche sopra accordi maggiori.', '[♭VI]–[♭VII]–[I] chiude un brano hard rock come nient\'altro.'] }),
   G({ id: 'prog', name: 'Prog rock', parent: 'rock', description: 'Modi (lidio, dorico), accordi con basso diverso, mediante cromatiche e tempi dispari.', scales: ['lydian', 'dorian', 'mixolydian', 'minor'], flavor: 'sevenths', voicing: 'barre', tonality: 'both', bpm: [80, 160], hue: 200,
-    tips: ['[I]–[II] in lidio per il suono sospeso e "spaziale".', 'Prova a muovere lo stesso accordo per terze maggiori ([I]–[♭VI]–[IV]…).'] }),
+    tips: ['[I]–[II] in lidio per il suono sospeso e "spaziale".', 'Prova a muovere lo stesso accordo per terze maggiori ([I]–[♭VI]–[III]…).'] }),
 
   // ───────────── METAL
   G({ id: 'metal', name: 'Metal', description: 'Minore eolio e frigio, power chord, cromatismi e tritoni. La cadenza [♭VI]–[♭VII]–[i] è il "[V]–[I]" del metal.', scales: ['minor', 'phrygian', 'harmonicMinor', 'minorPentatonic'], flavor: 'power', voicing: 'power', tonality: 'minor', bpm: [90, 200], hue: 0,
-    tips: ['Power chord: fondamentale + quinta, nessuna terza → funzionano sia in maggiore che in minore.', 'Il [♭II] (frigio) è la tensione più metal che ci sia: [i]–[♭II].', 'Accorda più basso (Drop D, Re standard) per tonalità come Re minore o Do♯ minore.'] }),
+    tips: ['Power chord: fondamentale + quinta, nessuna terza → funzionano sia in maggiore che in minore.', 'Il [♭II] (frigio) è la tensione più metal che ci sia: [i]–[♭II].', 'Accorda più basso per le tonalità scure: Drop D o Re standard per Re minore, Do♯ standard o Drop C♯ per Do♯ minore.'] }),
   G({ id: 'heavy', name: 'Heavy metal classico', parent: 'metal', description: 'Iron Maiden, Judas Priest, Black Sabbath: eolio, cavalcate, [i]–[♭VI]–[♭VII] e armonizzazioni a terze.', scales: ['minor', 'minorPentatonic', 'harmonicMinor'], flavor: 'power', voicing: 'power', tonality: 'minor', bpm: [110, 180], hue: 5,
     tips: ['[i]–[♭VI]–[♭VII]–[i] è la progressione fondamentale.', 'Armonizza le melodie a terze sulla scala minore.'] }),
   G({ id: 'thrash', name: 'Thrash / Death', parent: 'metal', description: 'Riff cromatici sulla 6ª corda, frigio e locrio, tritoni e power chord veloci.', scales: ['phrygian', 'locrian', 'minor', 'blues'], flavor: 'power', voicing: 'power', tonality: 'minor', bpm: [160, 240], hue: 355,
-    tips: ['Pedale sulla corda a vuoto alternato a power chord cromatici ([i]–[♭II]–[♭III]).', 'Il tritono ([i]–[♭v]) per la massima aggressività.'] }),
+    tips: ['Pedale sulla corda a vuoto alternato a power chord cromatici ([i]–[♭II]–[♭III]).', 'Il tritono ([I5]–[♭V5]) per la massima aggressività.'] }),
   G({ id: 'power', name: 'Power metal', parent: 'metal', description: 'Epico e melodico: progressioni minori che si aprono in maggiore, [V] maggiore dalla minore armonica, ritornelli corali.', scales: ['minor', 'harmonicMinor', 'major'], flavor: 'power', voicing: 'barre', tonality: 'both', bpm: [140, 200], hue: 45,
     tips: ['[i]–[♭VI]–[♭III]–[♭VII]: il ritornello epico per eccellenza.', 'Chiudi con [♭VI]–[♭VII]–[I] (maggiore!) per il finale trionfale.', 'Il [V] maggiore (armonica) prima della tonica crea il pathos neoclassico.'] }),
   G({ id: 'symphonic', name: 'Symphonic / Epic metal', parent: 'metal', description: 'Metal con orchestra: armonia da colonna sonora, minore armonica, mediante cromatiche e cadenze solenni.', scales: ['harmonicMinor', 'minor', 'phrygianDominant'], flavor: 'triads', voicing: 'barre', tonality: 'minor', bpm: [80, 170], hue: 270,
@@ -86,7 +86,7 @@ export const GENRES: GenreDef[] = [
     tips: ['[i]–[♭VII]–[i]–[♭VII]: il "bordone" che regge la melodia folk.', 'Il [IV] maggiore in minore (dorico) dà il sapore celtico.', 'Melodie in 6/8 o in levare, chitarre che raddoppiano la linea folk.'] }),
   G({ id: 'metalcore', name: 'Metalcore / Djent', parent: 'metal', description: 'Strofe minori con breakdown sul frigio e ritornelli melodici con loop pop ([vi]–[IV]–[I]–[V]).', scales: ['minor', 'phrygian', 'major'], flavor: 'power', voicing: 'power', tonality: 'both', bpm: [110, 180], hue: 210,
     tips: ['Breakdown: corda a vuoto + [♭II].', 'Ritornello "pulito" sui loop pop con accordi più aperti.'] }),
-  G({ id: 'neoclassical', name: 'Neoclassical metal', parent: 'metal', description: 'Yngwie, Rhapsody, Malmsteen: minore armonica, cadenze barocche ([i]–[iv]–[V]), arpeggi e diminuiti.', scales: ['harmonicMinor', 'phrygianDominant', 'hungarianMinor'], flavor: 'triads', voicing: 'barre', tonality: 'minor', bpm: [120, 200], hue: 290,
+  G({ id: 'neoclassical', name: 'Neoclassical metal', parent: 'metal', description: 'Yngwie Malmsteen, Rhapsody, Jason Becker: minore armonica, cadenze barocche ([i]–[iv]–[V]), arpeggi e diminuiti.', scales: ['harmonicMinor', 'phrygianDominant', 'hungarianMinor'], flavor: 'triads', voicing: 'barre', tonality: 'minor', bpm: [120, 200], hue: 290,
     tips: ['Usa sempre il [V] maggiore (sensibile alzata).', 'Il [vii°7] è un ottimo accordo di passaggio verso la tonica.'] }),
 
   // ───────────── JAZZ
@@ -141,7 +141,7 @@ export const GENRES: GenreDef[] = [
   G({ id: 'cinematic', name: 'Cinematografica / Epica', description: 'Colonne sonore: mediante cromatiche ([I]–[♭VI], [I]–[III]), lidio, minore armonica, cadenze solenni.', scales: ['minor', 'lydian', 'harmonicMinor', 'dorian'], flavor: 'triads', voicing: 'barre', tonality: 'both', bpm: [60, 120], hue: 250,
     tips: ['Accordi maggiori a distanza di terza ([I]–[♭VI]–[IV]): eroico e "magico".', 'Il lidio ([I]–[II]) per meraviglia e fantasia.'] }),
   G({ id: 'classical', name: 'Classica / Cadenze', description: 'Le regole dell\'armonia tonale: cadenze perfette, plagali, d\'inganno, napoletana, terza piccarda.', scales: ['major', 'harmonicMinor', 'melodicMinor'], flavor: 'triads', voicing: 'open', tonality: 'both', bpm: [60, 120], hue: 40,
-    tips: ['T → S → D → T: la grammatica di base.', 'La sensibile sale sempre alla tonica.'] }),
+    tips: ['T → S → D → T: la grammatica di base.', 'La sensibile sale quasi sempre alla tonica, soprattutto nella voce più acuta.'] }),
 ];
 
 export const GENRE_MAP: Record<GenreId, GenreDef> = Object.fromEntries(GENRES.map((g) => [g.id, g])) as Record<GenreId, GenreDef>;

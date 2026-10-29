@@ -1,4 +1,5 @@
-import { setNotation, type Notation, parseNote } from '../theory/notes';
+import { setNotation, type Notation, parseNote, transpose, simplify, noteName } from '../theory/notes';
+import { MODES } from '../theory/scales';
 import type { ModeId } from '../theory/scales';
 import type { GenreId } from '../data/genres';
 import { GENRE_MAP } from '../data/genres';
@@ -124,4 +125,14 @@ export function applyTheme(): void {
   const root = document.documentElement;
   if (settings.theme === 'auto') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', settings.theme);
+}
+
+/** Tonalità in cui mostrare una progressione di modo `mode`: quella scelta, o la sua relativa se il carattere è diverso. */
+export function keyForMode(mode: ModeId): { key: Key; tonic: string } {
+  const own = currentKey();
+  const ownMinor = MODES[context.mode].tonality === 'minor';
+  const minor = MODES[mode].tonality === 'minor';
+  const note = ownMinor === minor ? own.tonic : minor ? transpose(own.tonic, 5, 9) : transpose(own.tonic, 2, 3);
+  const tonic = noteName(simplify(note, own.tonic.acc < 0), 'english', true);
+  return { key: makeKey(tonic, mode), tonic };
 }

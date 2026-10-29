@@ -30,9 +30,10 @@ export function analyzeAll(chords: string[], key: Key): ChordItem[] {
   });
 }
 
-export function pill(item: ChordItem, opts: { small?: boolean; changed?: boolean; onClick?: () => void; active?: boolean } = {}): HTMLElement {
+export function pill(item: ChordItem, opts: { small?: boolean; big?: boolean; changed?: boolean; onClick?: () => void; active?: boolean } = {}): HTMLElement {
   const a = item.analysis;
-  const cls = ['pill', `fn-${a.fn}`, a.borrowed ? 'borrowed' : '', a.secondary ? 'secondary' : '', opts.small ? 'small' : '', opts.changed ? 'changed' : '', opts.active ? 'active' : ''];
+  const long = item.symbol.length > (opts.big ? 5 : 4);
+  const cls = ['pill', `fn-${a.fn}`, a.borrowed ? 'borrowed' : '', a.secondary || a.chromatic ? 'secondary' : '', opts.small ? 'small' : '', opts.big ? 'big' : '', long ? 'long' : '', opts.changed ? 'changed' : '', opts.active ? 'active' : ''];
   const tag = opts.onClick ? 'button' : 'span';
   const el = h(tag as 'span', { class: cls.join(' '), tabindex: opts.onClick ? undefined : '0', onclick: opts.onClick, type: opts.onClick ? 'button' : undefined },
     h('span', { class: 'pill-sym' }, item.symbol),
@@ -42,11 +43,11 @@ export function pill(item: ChordItem, opts: { small?: boolean; changed?: boolean
 
 export function legend(): HTMLElement {
   return h('div', { class: 'legend' },
-    h('span', { class: 'lg fn-T' }, 'Tonica — riposo'),
-    h('span', { class: 'lg fn-S' }, 'Sottodominante — movimento'),
-    h('span', { class: 'lg fn-D' }, 'Dominante — tensione'),
-    h('span', { class: 'lg borrowed' }, 'Prestito modale'),
-    h('span', { class: 'lg secondary' }, 'Secondaria'));
+    h('span', { class: 'lg fn-T' }, h('b', null, 'Casa'), ' · tonica'),
+    h('span', { class: 'lg fn-S' }, h('b', null, 'Viaggio'), ' · sottodominante'),
+    h('span', { class: 'lg fn-D' }, h('b', null, 'Tensione'), ' · dominante'),
+    h('span', { class: 'lg borrowed' }, h('b', null, 'Colore'), ' · in prestito'),
+    h('span', { class: 'lg secondary' }, h('b', null, 'Colore'), ' · cromatico (es. dominante secondaria)'));
 }
 
 let stopCurrent: (() => void) | null = null;
@@ -79,10 +80,12 @@ export function stopAll(): void {
   player.stop();
 }
 
-export function playButton(getArgs: () => PlayArgs, onChord: (i: number | null) => void, label = 'Ascolta'): HTMLButtonElement {
+export function playButton(getArgs: () => PlayArgs, onChord: (i: number | null) => void, label = 'Ascolta', round?: 'lg' | 'sm'): HTMLButtonElement {
   let stop: (() => void) | null = null;
-  const ico = h('span', { class: 'ico' }, '▶');
-  const btn = h('button', { type: 'button', class: 'btn play', 'aria-label': label }, ico, h('span', null, label));
+  const ico = h('span', { class: 'ico', 'aria-hidden': 'true' }, '▶');
+  const btn = round
+    ? h('button', { type: 'button', class: `play-round${round === 'sm' ? ' sm' : ''}`, 'aria-label': label, title: label }, ico)
+    : h('button', { type: 'button', class: 'btn play', 'aria-label': label }, ico, h('span', null, label));
   const reset = () => {
     stop = null;
     btn.classList.remove('playing', 'loading');
@@ -158,4 +161,25 @@ export function progressionCard(o: CardOptions): HTMLElement {
 
 export function stars(n: number): HTMLElement {
   return h('span', { class: 'stars', title: `Popolarità ${n}/5`, 'aria-label': `Popolarità ${n} su 5` }, '★'.repeat(n) + '☆'.repeat(5 - n));
+}
+
+/** Riga larga per le liste (Ascolta): play, testo, tessere con la curva di tensione sotto. */
+export function progressionRow(o: CardOptions): HTMLElement {
+  const items = analyzeAll(o.chords, o.key);
+  let voicings: Voicing[] | null = null;
+  const getVoicings = () => (voicings ??= voiceProgression(items.map((i) => i.chord), o.style));
+  const pills = items.map((it) => pill(it));
+  const highlight = (i: number | null) => pills.forEach((p, k) => p.classList.toggle('active', k === i));
+  const strip = h('div', { class: 'strip', 'aria-label': 'Accordi e curva della tensione' },
+    items.map((it, i) => h('div', { class: 'strip-col' }, pills[i],
+      h('div', { class: 'tbar', 'aria-hidden': 'true', title: 'Tensione' },
+        h('span', { style: { height: `${Math.round(6 + (it.analysis.tension / 6) * 38)}px`, opacity: String(0.35 + (it.analysis.tension / 6) * 0.65) } })))));
+  return h('article', { class: 'prog-row' },
+    playButton(() => ({ voicings: getVoicings(), bars: o.bars ?? o.chords.map(() => 1), pattern: o.pattern, instrument: instrumentFor(o.genre) }), highlight, `Ascolta ${o.title}`, 'lg'),
+    h('div', { class: 'info' },
+      h('div', { class: 'badges' }, h('h3', null, h('a', { href: o.href }, o.title)), o.badges ?? null),
+      o.subtitle ? h('p', null, richText(o.subtitle, o.key)) : null,
+      o.meta ?? null),
+    strip,
+    h('a', { class: 'btn', href: o.href }, 'Apri →'));
 }

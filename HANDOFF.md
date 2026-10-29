@@ -12,7 +12,7 @@
 | Base di conoscenza | `src/data/` — 113 progressioni, 46 generi/sottogeneri |
 | Audio | `src/audio/` — sequencer (10 ritmi), campioni reali di 6 chitarre (FluidR3 GM, CC BY 3.0) caricati a richiesta, synth Karplus-Strong di riserva, riverbero, palm mute |
 | MIDI | Export `.mid` (SMF tipo 0, tempo, programma GM, marker con i nomi degli accordi) e uscita **Web MIDI** verso synth/DAW esterni |
-| UI | Componi, Libreria, Dettaglio (analisi, scale, sostituzioni), Mappa armonica, Generi, Teoria; tema chiaro/scuro; notazione C D E / Do Re Mi |
+| UI | Redesign "quaderno illustrato": Home per emozioni, Ascolta (ex Componi + Libreria), Laboratorio (ex Mappa: frequenza stimata del prossimo accordo, finali per genere, corsia della scala), scheda Progressione con "Il viaggio", Capisci (Teoria + Generi); funzioni come forma + colore (Casa ● / Viaggio ■ / Tensione ▲, colore = bordo tratteggiato); tema chiaro/scuro; notazione C D E / Do Re Mi |
 | Test | 48 test Vitest (`npm test`) |
 | CI/CD | `.github/workflows/ci.yml` (PR e branch) e `deploy.yml` (push su `main` → GitHub Pages) |
 
@@ -141,4 +141,6 @@ Priorità: 🔴 alta · 🟠 media · 🟢 bassa. Ogni voce indica *cosa*, *perc
 | i suoni | `src/audio/player.ts`, campioni in `public/samples/` |
 | l'export MIDI | `src/audio/midi.ts` |
 | le sostituzioni | `src/theory/substitutions.ts` |
-| il generatore | `src/theory/generator.ts` |
+| il generatore | `src/theory/generator.ts` (priori corretti con le frequenze del corpus de Clercq–Temperley) |
+| la corsia della scala | `src/theory/scaleTrack.ts` (regola della minima modifica), `src/ui/components/scaleLane.ts` |
+| le emozioni | `src/data/moods.ts` |

@@ -29,9 +29,14 @@ interface Model {
 
 const FN_MATRIX: Record<HarmonicFunction, Record<HarmonicFunction, number>> = {
   T: { T: 0.15, S: 0.4, D: 0.3 },
-  S: { T: 0.25, S: 0.15, D: 0.45 },
-  D: { T: 0.55, S: 0.14, D: 0.08 },
+  S: { T: 0.4, S: 0.15, D: 0.45 },
+  D: { T: 0.55, S: 0.3, D: 0.08 },
 };
+/**
+ * Frequenza di base delle fondamentali (semitoni dalla tonica) nel corpus rock di
+ * de Clercq & Temperley (2011), tab. 2: evita che ii e iii vengano sovrastimati.
+ */
+const ROOT_BASE: Record<number, number> = { 0: 0.33, 5: 0.23, 7: 0.16, 10: 0.08, 9: 0.07, 8: 0.04, 2: 0.04, 3: 0.03, 4: 0.02, 1: 0.007, 6: 0.004, 11: 0.006 };
 const MOTION: Record<number, number> = { 0: 0, 1: 0.03, 2: 0.12, 3: 0.08, 4: 0.08, 5: 0.3, 6: 0, 7: 0.12, 8: 0.08, 9: 0.08, 10: 0.12, 11: 0.03 };
 
 const refKey = (mode: ModeId) => makeKey('C', mode);
@@ -55,6 +60,7 @@ export function functionalPrior(a: string, b: string, mode: ModeId): number {
   if (!rb.target && !isDiatonic(rb, key)) p *= 0.5;
   if (QUALITIES[rb.quality].family === 'diminished') p *= 0.45;
   if (ob === 0 && !rb.target) p *= 1.2;
+  if (!rb.target) p *= Math.pow(ROOT_BASE[ob] ?? 0.005, 0.7);
   return p;
 }
 

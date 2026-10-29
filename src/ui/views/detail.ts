@@ -10,14 +10,16 @@ import { MODES, SCALES, scalePcs, type ModeId, type ScaleId } from '../../theory
 import { parseNote, noteName, pc } from '../../theory/notes';
 import { QUALITIES, chordPcs } from '../../theory/chords';
 import { parseRoman, prettyRoman, type Key } from '../../theory/roman';
-import { describeMove, mainScales, scaleForChord, chordNoteNames, FUNCTION_NAMES } from '../../theory/analysis';
+import { describeMove, mainScales, scaleForChord, chordNoteNames } from '../../theory/analysis';
 import { substitutionsFor, SUB_TYPE_NAMES, type Substitution, type Boldness } from '../../theory/substitutions';
 import { findMatch } from '../../theory/generator';
+import { laneCells, scaleNotesExplain } from '../components/scaleLane';
 import { candidatesFor, voiceProgression, voicingMidi, powerize, type Voicing } from '../../guitar/voicings';
 import { player } from '../../audio/player';
 import { href, replaceQuery, type Route } from '../router';
 
 const BOLD_LABEL: Record<Boldness, string> = { sicura: 'Sicura', colore: 'Colore', audace: 'Audace' };
+const FN_WORD = { T: 'Casa', S: 'Viaggio', D: 'Tensione' } as const;
 
 export function detailView(route: Route): HTMLElement {
   const q = route.query;
@@ -91,7 +93,7 @@ export function detailView(route: Route): HTMLElement {
 
     // ── intestazione
     const header = h('section', { class: 'detail-head' },
-      h('a', { class: 'link back', href: href('') }, '← Componi'),
+      h('a', { class: 'link back', href: href('ascolta') }, '← Ascolta'),
       h('h1', null, title, modified ? h('span', { class: 'badge warn' }, 'modificata') : null),
       def?.aka?.length ? h('p', { class: 'muted' }, def.aka.join(' · ')) : null,
       h('div', { class: 'badges' },
@@ -129,7 +131,7 @@ export function detailView(route: Route): HTMLElement {
       const cycle = (d: number) => { overrides.set(i, (idx + d + list.length) % list.length); render(); };
       const shownSym = power && it.chord.quality !== powerize(it.chord).quality ? `${it.symbol} → ${noteName(it.chord.root)}5` : it.symbol;
       return h('article', {
-        class: `chord-card fn-${it.analysis.fn}${it.analysis.borrowed ? ' borrowed' : ''}${it.analysis.secondary ? ' secondary' : ''}${i === selected ? ' selected' : ''}${playing === i ? ' playing' : ''}`,
+        class: `chord-card fn-${it.analysis.fn}${it.analysis.borrowed ? ' borrowed' : ''}${it.analysis.secondary || it.analysis.chromatic ? ' secondary' : ''}${i === selected ? ' selected' : ''}${playing === i ? ' playing' : ''}`,
         'data-ci': i,
       },
         h('header', null,
@@ -197,15 +199,13 @@ export function detailView(route: Route): HTMLElement {
       h('h2', null, 'Scale per melodia e assolo'),
       h('div', { class: 'scale-chips' }, mains.map((m) => h('span', { class: 'chip' }, h('strong', null, m.name), ' — ', SCALES[m.scale].description))),
       h('div', { class: 'panel' },
-        h('table', { class: 'scale-table' },
-          h('thead', null, h('tr', null, h('th', null, 'Accordo'), h('th', null, 'Scala consigliata'), h('th', null, 'Cosa cambia'))),
-          h('tbody', null, items.map((it, i) => {
-            const sc = scaleForChord(it.rc, k);
-            return h('tr', { class: i === selected ? 'selected' : '', onclick: () => { selected = i; render(); } },
-              h('td', null, pill(it, { small: true })),
-              h('td', null, sc.name),
-              h('td', { class: 'muted' }, sc.changes.length ? sc.changes.join(', ') : 'niente: resta nella scala'));
-          })))),
+        h('h3', null, 'La scala, accordo per accordo'),
+        h('p', { class: 'muted small' }, 'Sotto ogni accordo, la scala in cui sei. Quando un accordo esce dalla tonalità, il tratto diventa lilla e ti dice quale nota cambia.'),
+        h('div', { class: 'timeline' },
+          h('div', { class: 'timeline-grid', style: { '--n': String(items.length) } },
+            items.map((it, i) => h('div', { class: 'slot', style: { gridRow: '1' } }, pill(it, { onClick: () => { selected = i; render(); }, active: i === selected }))),
+            laneCells(items, k, selected, (i) => { selected = i; render(); }))),
+        scaleNotesExplain(sel, k)),
       h('div', { class: 'panel' },
         h('div', { class: 'controls-row' },
           segmented(scaleView, [{ value: 'key', label: 'Scala della tonalità' }, { value: 'pent', label: 'Pentatonica' }, { value: 'chord', label: `Scala su ${sel.symbol}`, chord: sel.chord }], (v) => { scaleView = v; render(); }),
@@ -245,10 +245,22 @@ export function detailView(route: Route): HTMLElement {
         badges: [stars(p.popularity)], href: href('prog', { id: p.id, k: tonic, m: p.mode, g: genre }),
       })))) : null;
 
-    const fnSummary = h('p', { class: 'muted small fn-summary' },
-      items.map((it) => FUNCTION_NAMES[it.analysis.fn][0]).join(' → '), ' (T = tonica, S = sottodominante, D = dominante)');
+    // ── il viaggio: ogni accordo come una tappa, con parole semplici
+    const word = (it: ChordItem) => `${FN_WORD[it.analysis.fn]}${it.analysis.borrowed || it.analysis.chromatic || it.analysis.secondary ? ' · colore' : ''}`;
+    const journey = h('section', { class: 'panel' },
+      h('div', { class: 'section-head' }, h('h2', null, 'Il viaggio'), playButton(playArgs, highlight, 'Suona')),
+      h('div', { class: 'journey' }, items.map((it, i) => {
+        const next = items[(i + 1) % items.length];
+        const move = items.length > 1 ? describeMove(it.rc, next.rc, k) : null;
+        return h('div', { class: `step-card${playing === i ? ' playing' : ''}`, 'data-ci': i },
+          pill(it, { big: true }),
+          h('span', { class: 'kicker' }, `${i + 1} · ${word(it)}`),
+          h('strong', null, richText(it.analysis.label, k)),
+          move ? h('p', null, i === items.length - 1 ? 'Poi si ricomincia: ' : 'Poi: ', richText(move.title.toLowerCase(), k)) : null);
+      })),
+      legend());
 
-    root.replaceChildren(header, toolbar, fnSummary, chordsSection, analysisSection, scaleSection, subsSection, relatedSection ?? '');
+    root.replaceChildren(header, journey, toolbar, chordsSection, analysisSection, scaleSection, subsSection, relatedSection ?? '');
   }
 
   render();
