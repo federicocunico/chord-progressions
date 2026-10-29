@@ -32,9 +32,9 @@ export interface Context {
   seed: number;
 }
 
-/** Ascolto di default: pianoforte, ritmo semplice, una sola volta (il suono del genere resta a un clic). */
-const SOUND_DEFAULTS = { bpm: 100, pattern: 'simple', loop: false, instrument: 'acoustic_grand_piano' } as const;
-const SETTINGS_VERSION = 2;
+/** Ascolto di default: pianoforte, ritmo semplice, in loop (il suono del genere resta a un clic). */
+const SOUND_DEFAULTS = { bpm: 100, pattern: 'simple', loop: true, instrument: 'acoustic_grand_piano' } as const;
+const SETTINGS_VERSION = 3;
 const DEFAULT_SETTINGS: Settings = { notation: 'english', theme: 'auto', style: 'genre', midiOut: '', ...SOUND_DEFAULTS };
 const DEFAULT_CONTEXT: Context = { tonic: 'C', mode: 'major', genre: 'pop', length: 4, popularity: 4, seed: 1 };
 
@@ -56,7 +56,10 @@ function save(k: string, v: unknown): void {
 
 export const settings: Settings = load('cp.settings', DEFAULT_SETTINGS);
 if ((settings.v ?? 1) < SETTINGS_VERSION) {
-  Object.assign(settings, SOUND_DEFAULTS, { v: SETTINGS_VERSION });
+  // v2: nuovo suono di default; v3: torna il loop (senza toccare suono e ritmo scelti dopo la v2)
+  if ((settings.v ?? 1) < 2) Object.assign(settings, SOUND_DEFAULTS);
+  else settings.loop = true;
+  settings.v = SETTINGS_VERSION;
   save('cp.settings', settings);
 }
 export const context: Context = load('cp.context', DEFAULT_CONTEXT);
