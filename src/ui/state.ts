@@ -3,7 +3,7 @@ import type { ModeId } from '../theory/scales';
 import type { GenreId } from '../data/genres';
 import { GENRE_MAP } from '../data/genres';
 import type { VoicingStyle } from '../guitar/voicings';
-import type { Pattern } from '../audio/player';
+import type { Pattern, InstrumentId } from '../audio/player';
 import { makeKey, type Key } from '../theory/roman';
 
 export interface Settings {
@@ -14,6 +14,10 @@ export interface Settings {
   loop: boolean;
   /** 'genre' = usa lo stile consigliato dal genere. */
   style: VoicingStyle | 'genre';
+  /** 'genre' = strumento consigliato dal genere. */
+  instrument: InstrumentId | 'genre';
+  /** Id dell'uscita Web MIDI ('' = nessuna). */
+  midiOut: string;
 }
 
 export interface Context {
@@ -25,7 +29,7 @@ export interface Context {
   seed: number;
 }
 
-const DEFAULT_SETTINGS: Settings = { notation: 'english', theme: 'auto', bpm: 90, pattern: 'genre', loop: true, style: 'genre' };
+const DEFAULT_SETTINGS: Settings = { notation: 'english', theme: 'auto', bpm: 90, pattern: 'genre', loop: true, style: 'genre', instrument: 'genre', midiOut: '' };
 const DEFAULT_CONTEXT: Context = { tonic: 'C', mode: 'major', genre: 'pop', length: 4, popularity: 4, seed: 1 };
 
 function load<T>(k: string, def: T): T {
@@ -80,13 +84,40 @@ export function styleFor(genre?: GenreId): VoicingStyle {
   return genre ? GENRE_MAP[genre].voicing : 'auto';
 }
 
+const PATTERN_BY_GENRE: Partial<Record<GenreId, Pattern>> = {
+  metal: 'eighths', heavy: 'gallop', thrash: 'gallop', power: 'gallop', black: 'eighths', doom: 'pad', folkmetal: 'gallop',
+  metalcore: 'eighths', symphonic: 'ballad', neoclassical: 'arpeggio', punk: 'eighths', poppunk: 'eighths', grunge: 'eighths',
+  jrock: 'eighths', bluesrock: 'shuffle', blues: 'shuffle', reggae: 'reggae', bossa: 'bossa', funk: 'funk',
+  folk: 'arpeggio', celtic: 'arpeggio', cantautorato: 'ballad', classical: 'arpeggio', cinematic: 'ballad', flamenco: 'strum',
+  jazz: 'pad', bebop: 'pad', gypsy: 'strum', modaljazz: 'pad', neosoul: 'ballad', soul: 'ballad', gospel: 'ballad', citypop: 'ballad',
+};
+
 export function patternFor(genre?: GenreId): Pattern {
   if (settings.pattern !== 'genre') return settings.pattern;
-  const v = genre ? GENRE_MAP[genre].voicing : 'auto';
-  if (v === 'power') return 'eighths';
-  if (v === 'jazz') return 'pad';
-  if (genre && ['folk', 'celtic', 'cantautorato', 'classical', 'cinematic', 'symphonic', 'neoclassical'].includes(genre)) return 'arpeggio';
-  return 'strum';
+  return genrePattern(genre);
+}
+
+export function genrePattern(genre?: GenreId): Pattern {
+  if (!genre) return 'strum';
+  return PATTERN_BY_GENRE[genre] ?? (GENRE_MAP[genre].parent ? PATTERN_BY_GENRE[GENRE_MAP[genre].parent!] : undefined) ?? 'strum';
+}
+
+const INSTRUMENT_BY_GENRE: Partial<Record<GenreId, InstrumentId>> = {
+  metal: 'distortion_guitar', heavy: 'distortion_guitar', thrash: 'distortion_guitar', power: 'distortion_guitar', black: 'distortion_guitar',
+  doom: 'distortion_guitar', folkmetal: 'distortion_guitar', metalcore: 'distortion_guitar', symphonic: 'distortion_guitar', neoclassical: 'distortion_guitar',
+  punk: 'overdriven_guitar', poppunk: 'overdriven_guitar', grunge: 'overdriven_guitar', jrock: 'overdriven_guitar', bluesrock: 'overdriven_guitar', rock: 'overdriven_guitar', classicrock: 'overdriven_guitar',
+  jazz: 'electric_guitar_jazz', bebop: 'electric_guitar_jazz', modaljazz: 'electric_guitar_jazz', neosoul: 'electric_guitar_jazz', citypop: 'electric_guitar_clean', soul: 'electric_guitar_jazz',
+  funk: 'electric_guitar_clean', reggae: 'electric_guitar_clean', synthpop: 'electric_guitar_clean', edm: 'electric_guitar_clean', kpop: 'electric_guitar_clean', indie: 'electric_guitar_clean', blues: 'electric_guitar_clean', gospel: 'electric_guitar_clean',
+  bossa: 'acoustic_guitar_nylon', flamenco: 'acoustic_guitar_nylon', latin: 'acoustic_guitar_nylon', latinpop: 'acoustic_guitar_nylon', classical: 'acoustic_guitar_nylon', cinematic: 'acoustic_guitar_nylon',
+};
+
+export function instrumentFor(genre?: GenreId): InstrumentId {
+  if (settings.instrument !== 'genre') return settings.instrument;
+  return genreInstrument(genre);
+}
+
+export function genreInstrument(genre?: GenreId): InstrumentId {
+  return (genre && (INSTRUMENT_BY_GENRE[genre] ?? (GENRE_MAP[genre].parent ? INSTRUMENT_BY_GENRE[GENRE_MAP[genre].parent!] : undefined))) || 'acoustic_guitar_steel';
 }
 
 export function applyTheme(): void {

@@ -3,8 +3,9 @@ import { TONICS_MAJOR, TONICS_MINOR, noteName, parseNote, pc } from '../../theor
 import { MODES, type ModeId } from '../../theory/scales';
 import { GENRES, ROOT_GENRES, type GenreId } from '../../data/genres';
 import { VOICING_STYLES, type VoicingStyle } from '../../guitar/voicings';
-import { PATTERNS, type Pattern } from '../../audio/player';
-import { context, settings, updateContext, updateSettings } from '../state';
+import { PATTERNS, INSTRUMENTS, type Pattern, type InstrumentId } from '../../audio/player';
+import { midiOutputs, webMidiSupported } from '../../audio/midi';
+import { context, settings, updateContext, updateSettings, genreInstrument, genrePattern } from '../state';
 
 export function tonicSelect(value: string, mode: ModeId, onChange: (t: string) => void): HTMLSelectElement {
   const list = MODES[mode].tonality === 'minor' ? TONICS_MINOR : TONICS_MAJOR;
@@ -35,8 +36,8 @@ export function styleSelect(): HTMLElement {
   return field('Diteggiatura', select(settings.style, opts, (v) => updateSettings({ style: v as VoicingStyle | 'genre' })));
 }
 
-export function patternSelect(): HTMLElement {
-  const opts = [{ value: 'genre' as const, label: 'Dal genere' }, ...(Object.keys(PATTERNS) as Pattern[]).map((p) => ({ value: p, label: PATTERNS[p] }))];
+export function patternSelect(genre?: GenreId): HTMLElement {
+  const opts = [{ value: 'genre' as const, label: genre ? `Dal genere: ${PATTERNS[genrePattern(genre)]}` : 'Dal genere' }, ...(Object.keys(PATTERNS) as Pattern[]).map((p) => ({ value: p, label: PATTERNS[p] }))];
   return field('Ritmo', select(settings.pattern, opts, (v) => updateSettings({ pattern: v as Pattern | 'genre' })));
 }
 
@@ -66,4 +67,30 @@ export function keyControls(opts: { genre?: boolean; allowAllGenres?: boolean } 
     field('Tonica', tonicSelect(context.tonic, context.mode, setTonic)),
     field('Tonalità / modo', modeControl(context.mode, setMode)),
     opts.genre !== false ? field('Genere', genreSelect(context.genre, (g) => g !== 'all' && updateContext({ genre: g }), opts.allowAllGenres)) : null);
+}
+
+export function instrumentSelect(genre?: GenreId): HTMLElement {
+  const opts = [{ value: 'genre' as const, label: genre ? `Dal genere: ${INSTRUMENTS[genreInstrument(genre)].name}` : 'Dal genere' }, ...(Object.keys(INSTRUMENTS) as InstrumentId[]).map((i) => ({ value: i, label: INSTRUMENTS[i].name }))];
+  return field('Suono', select(settings.instrument, opts, (v) => updateSettings({ instrument: v as InstrumentId | 'genre' })));
+}
+
+/** Uscita verso un synth o un DAW collegato (Web MIDI: Chrome, Edge, Opera). */
+export function midiOutControl(): HTMLElement | null {
+  if (!webMidiSupported()) return null;
+  const wrap = h('div', { class: 'midi-out' });
+  const connect = h('button', {
+    type: 'button', class: 'btn small', title: 'Invia le note a un synth, a un DAW o a un dispositivo MIDI collegato',
+    onclick: async () => {
+      try {
+        const outs = await midiOutputs();
+        const opts = [{ value: '', label: 'Nessuna (solo audio)' }, ...outs.map((o) => ({ value: o.id, label: o.name ?? o.id }))];
+        wrap.replaceChildren(select(settings.midiOut, opts, (v) => updateSettings({ midiOut: v }), { 'aria-label': 'Uscita MIDI' }),
+          outs.length ? '' : h('span', { class: 'muted small' }, ' nessun dispositivo trovato'));
+      } catch {
+        wrap.replaceChildren(h('span', { class: 'muted small' }, 'Accesso MIDI negato dal browser'));
+      }
+    },
+  }, settings.midiOut ? 'MIDI collegato ✓' : '🎹 Collega MIDI');
+  wrap.append(connect);
+  return field('Uscita MIDI', wrap);
 }

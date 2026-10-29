@@ -19,6 +19,7 @@ funzione, niente pentagramma.
 | **Mappa armonica** | Accordi diatonici, presi in prestito e dominanti secondarie per funzione; costruisci la tua progressione e vedi i prossimi accordi più probabili. |
 | **Generi** | Schede con scale, tipo di accordi, diteggiatura consigliata e consigli di scrittura. |
 | **Teoria** | Guida pratica in italiano, calcolata sulla tonalità scelta. |
+| **Audio e MIDI** | Campioni reali di 6 chitarre (acustica, classica, elettrica pulita/jazz/crunch/distorta) scelti in base al genere, 10 ritmi (strumming, arpeggio, galoppata metal, skank reggae, bossa, shuffle, funk…), export `.mid` con le note esatte delle diteggiature e uscita Web MIDI verso synth o DAW. |
 
 ## Sviluppo
 
@@ -30,6 +31,9 @@ npm run build      # build statica in dist/
 ```
 
 Stack: TypeScript + Vite, nessuna dipendenza runtime, SVG e Web Audio fatti a mano.
+Suoni: soundfont FluidR3 GM (CC BY 3.0) da [midi-js-soundfonts](https://github.com/gleitz/midi-js-soundfonts), vedi `public/samples/README.md`.
+
+Per il passaggio di consegne e le prossime idee: [`HANDOFF.md`](HANDOFF.md).
 
 ## Deploy
 

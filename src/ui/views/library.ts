@@ -37,7 +37,7 @@ export function libraryView(route: Route): HTMLElement {
       const g = genre !== 'all' ? genre : p.genres[0];
       return progressionCard({
         title: p.name, subtitle: p.description, chords: p.chords, key: { tonic: parseNote(tonic), mode: p.mode },
-        style: styleFor(g), pattern: patternFor(g), bars: p.bars,
+        style: styleFor(g), pattern: patternFor(g), genre: g, bars: p.bars,
         badges: [stars(p.popularity), h('span', { class: 'badge' }, MODES[p.mode].name)],
         meta: h('div', { class: 'tags' },
           p.genres.slice(0, 5).map((x) => h('a', { class: 'tag', href: href('generi/' + x) }, GENRE_MAP[x].name)),

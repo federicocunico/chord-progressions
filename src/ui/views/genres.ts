@@ -67,7 +67,7 @@ export function genreDetailView(id: GenreId): HTMLElement {
         const t = MODES[p.mode].tonality === tonality ? tonic : MODES[p.mode].tonality === 'minor' ? 'A' : 'C';
         return progressionCard({
           title: p.name, subtitle: p.description, chords: p.chords, key: { tonic: parseNote(t), mode: p.mode },
-          style: styleFor(id), pattern: patternFor(id), bars: p.bars, badges: [stars(p.popularity)],
+          style: styleFor(id), pattern: patternFor(id), genre: id, bars: p.bars, badges: [stars(p.popularity)],
           href: href('prog', { id: p.id, k: t, m: p.mode, g: id }),
         });
       }))));

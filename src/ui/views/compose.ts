@@ -43,7 +43,7 @@ export function composeView(): HTMLElement {
   const gen = generate({ genre: context.genre, mode: context.mode, length: context.length, popularity: context.popularity, seed: context.seed, count: 6 });
 
   const libCards = lib.map((p) => progressionCard({
-    title: p.name, subtitle: p.description, chords: p.chords, key: { tonic: key.tonic, mode: p.mode }, style, pattern, bars: p.bars,
+    title: p.name, subtitle: p.description, chords: p.chords, key: { tonic: key.tonic, mode: p.mode }, style, pattern, genre: context.genre, bars: p.bars,
     badges: [stars(p.popularity)],
     href: href('prog', { id: p.id, k: context.tonic, m: context.mode, g: context.genre }),
   }));
@@ -54,7 +54,7 @@ export function composeView(): HTMLElement {
     return progressionCard({
       title: g.match ? `≈ ${g.match.name}` : `Idea #${i + 1}`,
       subtitle: g.match ? 'Coincide (o è una rotazione) di una progressione nota della libreria.' : undefined,
-      chords: g.chords, key, style, pattern,
+      chords: g.chords, key, style, pattern, genre: context.genre,
       badges: g.match ? [h('span', { class: 'badge' }, 'nota')] : [h('span', { class: 'badge new' }, 'nuova')],
       meta: meter,
       href: href('prog', { c: g.chords.join(','), k: context.tonic, m: context.mode, g: context.genre, id: g.match?.id }),

@@ -34,6 +34,14 @@ Legenda: `[x]` fatto · `[ ]` da fare · (US-n) storia collegata
 ## Fase 5 — Audio (US-4)
 - [x] T050 Sintesi Karplus-Strong + strumming + loop + BPM
 
+## Fase 5b — Audio realistico e MIDI (richiesta successiva)
+- [x] T051 Sequencer puro con 10 ritmi e umanizzazione (`audio/sequencer.ts`)
+- [x] T052 Campioni reali di 6 chitarre GM caricati a richiesta, synth di riserva, palm mute, riverbero
+- [x] T053 Strumento e ritmo di default per genere
+- [x] T054 Export file MIDI (SMF) con marker degli accordi
+- [x] T055 Uscita Web MIDI verso dispositivi/DAW
+- [x] T056 Test del sequencer e del writer MIDI
+
 ## Fase 6 — UI (US-1..US-8)
 - [x] T060 Shell, routing a hash, tema, preferenze (notazione, stile)
 - [x] T061 Componenti SVG: diagramma accordo, circolo quinte, manico, curva tensione
@@ -50,7 +58,7 @@ Legenda: `[x]` fatto · `[ ]` da fare · (US-n) storia collegata
 
 ## Backlog v2
 - [ ] Accordature alternative (Drop D, Eb standard, 7 corde)
-- [ ] Export MIDI / Guitar Pro
+- [x] Export MIDI (Guitar Pro / MusicXML ancora da fare, vedi HANDOFF.md)
 - [ ] Ritmiche di strumming per genere
 - [ ] Preferiti e progressioni salvate condivisibili via URL (parziale: URL già condivisibile)
 - [ ] Modalità "melodia": suggerimento di frasi sulla scala

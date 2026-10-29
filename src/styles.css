@@ -394,3 +394,8 @@ table.simple td { padding: 8px; border-bottom: 1px solid var(--border); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* ───────────────────────── Audio / MIDI */
+.btn.play.loading .ico { display: inline-block; animation: pulse 0.9s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+.midi-out { display: flex; align-items: center; gap: 6px; min-height: 40px; }

@@ -1,8 +1,8 @@
 import { h, field, segmented } from '../dom';
-import { tonicSelect, modeControl, genreSelect, styleSelect, patternSelect, bpmControl } from '../components/controls';
-import { analyzeAll, pill, playButton, progressionCard, stars, legend, type ChordItem } from '../components/progression';
+import { tonicSelect, modeControl, genreSelect, styleSelect, patternSelect, bpmControl, instrumentSelect, midiOutControl } from '../components/controls';
+import { analyzeAll, pill, playButton, midiButton, progressionCard, stars, legend, type ChordItem } from '../components/progression';
 import { chordDiagram, circleOfFifths, fretboard, tensionCurve } from '../components/diagrams';
-import { settings, updateSettings, styleFor, patternFor, context, updateContext } from '../state';
+import { settings, updateSettings, styleFor, patternFor, instrumentFor, context, updateContext } from '../state';
 import { PROGRESSION_MAP } from '../../data/progressions';
 import { GENRE_MAP, type GenreId } from '../../data/genres';
 import { MODES, SCALES, scalePcs, type ModeId, type ScaleId } from '../../theory/scales';
@@ -85,6 +85,8 @@ export function detailView(route: Route): HTMLElement {
     const title = def?.name ?? (match ? `≈ ${match.name}` : 'La tua progressione');
     const pattern = patternFor(genre);
     const power = styleFor(genre) === 'power';
+    const instrument = instrumentFor(genre);
+    const playArgs = () => ({ voicings: chosen, bars, pattern, instrument });
 
     // ── intestazione
     const header = h('section', { class: 'detail-head' },
@@ -106,10 +108,11 @@ export function detailView(route: Route): HTMLElement {
         field('Tonica', tonicSelect(tonic, mode, (t) => { tonic = t; updateContext({ tonic: t }, false); syncUrl(); render(); })),
         field('Tonalità / modo', modeControl(mode, (m) => { mode = m; syncUrl(); render(); })),
         field('Genere', genreSelect(genre, (x) => { if (x !== 'all') { genre = x; syncUrl(); render(); } })),
-        styleSelect(), patternSelect(), bpmControl(),
+        styleSelect(), instrumentSelect(genre), patternSelect(genre), bpmControl(), midiOutControl(),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: settings.loop, onchange: (e: Event) => updateSettings({ loop: (e.target as HTMLInputElement).checked }) }), ' Loop')),
       h('div', { class: 'toolbar-actions' },
-        playButton(() => ({ voicings: chosen, bars, pattern }), highlight, 'Suona la progressione'),
+        playButton(playArgs, highlight, 'Suona la progressione'),
+        midiButton(playArgs, () => items.map((x) => x.symbol), () => `${title} ${noteName(k.tonic, 'english', true)}`),
         h('button', {
           type: 'button', class: 'btn', onclick: async (e: Event) => {
             const b = e.currentTarget as HTMLButtonElement;
@@ -133,7 +136,7 @@ export function detailView(route: Route): HTMLElement {
           h('div', null, h('h3', null, shownSym), h('span', { class: 'num' }, prettyRoman(it.rc))),
           bars[i] !== 1 ? h('span', { class: 'badge' }, `${bars[i]} batt.`) : null),
         h('p', { class: 'fn-label' }, it.analysis.label),
-        h('button', { type: 'button', class: 'diagram-btn', title: 'Ascolta questo accordo', onclick: () => player.preview(voicingMidi(v)) },
+        h('button', { type: 'button', class: 'diagram-btn', title: 'Ascolta questo accordo', onclick: () => void player.preview(voicingMidi(v), instrument) },
           chordDiagram(v, { rootPc: it.rootPc, title: it.symbol, flats })),
         h('p', { class: 'voicing-label' }, v.label),
         list.length > 1 ? h('div', { class: 'alt-nav' },
@@ -220,7 +223,7 @@ export function detailView(route: Route): HTMLElement {
         h('p', null, sub.explanation),
         h('div', { class: 'pills' }, newItems.map((it, i) => pill(it, { small: true, changed: sub.changed.includes(i) }))),
         h('footer', null,
-          playButton(() => ({ voicings: voiceProgression(newItems.map((x) => x.chord), styleFor(genre)), bars: sub.bars, pattern }), () => {}, 'Ascolta'),
+          playButton(() => ({ voicings: voiceProgression(newItems.map((x) => x.chord), styleFor(genre)), bars: sub.bars, pattern, instrument }), () => {}, 'Ascolta'),
           h('button', { type: 'button', class: 'btn primary', onclick: () => setChords(sub.chords, sub.bars) }, 'Applica')));
     };
     const subsSection = h('section', { id: 'subs' },
@@ -237,7 +240,7 @@ export function detailView(route: Route): HTMLElement {
     const relatedSection = related.length ? h('section', null,
       h('h2', null, 'Progressioni parenti'),
       h('div', { class: 'grid' }, related.map((p) => progressionCard({
-        title: p.name, subtitle: p.description, chords: p.chords, key: { tonic: k.tonic, mode: p.mode }, style: styleFor(genre), pattern, bars: p.bars,
+        title: p.name, subtitle: p.description, chords: p.chords, key: { tonic: k.tonic, mode: p.mode }, style: styleFor(genre), pattern, genre, bars: p.bars,
         badges: [stars(p.popularity)], href: href('prog', { id: p.id, k: tonic, m: p.mode, g: genre }),
       })))) : null;
 

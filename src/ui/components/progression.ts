@@ -5,8 +5,11 @@ import { chordSymbol, type Chord } from '../../theory/chords';
 import { analyzeChord, type ChordAnalysis } from '../../theory/analysis';
 import { pc } from '../../theory/notes';
 import { voiceProgression, voicingMidi, type Voicing, type VoicingStyle } from '../../guitar/voicings';
-import { player, type Pattern } from '../../audio/player';
-import { settings } from '../state';
+import { player, INSTRUMENTS, type Pattern, type InstrumentId } from '../../audio/player';
+import { renderSequence } from '../../audio/sequencer';
+import { buildMidiFile, downloadBytes } from '../../audio/midi';
+import { settings, instrumentFor } from '../state';
+import type { GenreId } from '../../data/genres';
 
 export interface ChordItem {
   numeral: string;
@@ -45,8 +48,15 @@ export function legend(): HTMLElement {
 
 let stopCurrent: (() => void) | null = null;
 
+export interface PlayArgs {
+  voicings: Voicing[];
+  bars: number[];
+  pattern: Pattern;
+  instrument: InstrumentId;
+}
+
 /** Riproduce una progressione e chiama onChord(i) a ogni accordo. Restituisce la funzione di stop. */
-export function playProgression(voicings: Voicing[], bars: number[], pattern: Pattern, onChord: (i: number) => void, onStop: () => void): () => void {
+export function playProgression(a: PlayArgs, onChord: (i: number) => void, onStop: () => void, onReady?: () => void): () => void {
   stopCurrent?.();
   const stop = () => {
     player.stop();
@@ -54,8 +64,9 @@ export function playProgression(voicings: Voicing[], bars: number[], pattern: Pa
     if (stopCurrent === stop) stopCurrent = null;
   };
   stopCurrent = stop;
-  player.play(voicings.map((v, i) => ({ midis: voicingMidi(v), bars: bars[i] ?? 1 })), {
-    bpm: settings.bpm, pattern, loop: settings.loop, onChord, onEnd: () => onStop(),
+  void player.play(a.voicings.map((v, i) => ({ midis: voicingMidi(v), bars: a.bars[i] ?? 1 })), {
+    bpm: settings.bpm, pattern: a.pattern, loop: settings.loop, instrument: a.instrument, midiOut: settings.midiOut,
+    onChord: (i) => { onReady?.(); onChord(i); }, onEnd: () => onStop(),
   });
   return stop;
 }
@@ -65,13 +76,14 @@ export function stopAll(): void {
   player.stop();
 }
 
-export function playButton(getArgs: () => { voicings: Voicing[]; bars: number[]; pattern: Pattern }, onChord: (i: number | null) => void, label = 'Ascolta'): HTMLButtonElement {
+export function playButton(getArgs: () => PlayArgs, onChord: (i: number | null) => void, label = 'Ascolta'): HTMLButtonElement {
   let stop: (() => void) | null = null;
-  const btn = h('button', { type: 'button', class: 'btn play', 'aria-label': label }, h('span', { class: 'ico' }, '▶'), h('span', null, label));
+  const ico = h('span', { class: 'ico' }, '▶');
+  const btn = h('button', { type: 'button', class: 'btn play', 'aria-label': label }, ico, h('span', null, label));
   const reset = () => {
     stop = null;
-    btn.classList.remove('playing');
-    btn.firstElementChild!.textContent = '▶';
+    btn.classList.remove('playing', 'loading');
+    ico.textContent = '▶';
     onChord(null);
   };
   btn.addEventListener('click', () => {
@@ -79,12 +91,32 @@ export function playButton(getArgs: () => { voicings: Voicing[]; bars: number[];
       stop();
       return;
     }
-    const a = getArgs();
-    btn.classList.add('playing');
-    btn.firstElementChild!.textContent = '■';
-    stop = playProgression(a.voicings, a.bars, a.pattern, (i) => onChord(i), reset);
+    btn.classList.add('playing', 'loading');
+    ico.textContent = '…';
+    stop = playProgression(getArgs(), (i) => onChord(i), reset, () => {
+      btn.classList.remove('loading');
+      ico.textContent = '■';
+    });
   });
   return btn;
+}
+
+/** Scarica la progressione come file MIDI, con le note esatte delle diteggiature e il ritmo scelto. */
+export function exportMidi(a: PlayArgs, symbols: string[], name: string): void {
+  const seq = renderSequence(a.voicings.map((v, i) => ({ midis: voicingMidi(v), bars: a.bars[i] ?? 1 })), a.pattern);
+  const bytes = buildMidiFile(seq.events, {
+    bpm: settings.bpm, program: INSTRUMENTS[a.instrument].program, name,
+    markers: seq.chordStarts.map((b, i) => [b, symbols[i] ?? ''] as [number, string]),
+  });
+  const safe = name.normalize('NFD').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'progressione';
+  downloadBytes(bytes, `${safe}-${settings.bpm}bpm.mid`);
+}
+
+export function midiButton(getArgs: () => PlayArgs, symbols: () => string[], name: () => string): HTMLButtonElement {
+  return h('button', {
+    type: 'button', class: 'btn', title: 'Scarica un file .mid da aprire in un DAW, Guitar Pro, MuseScore…',
+    onclick: () => exportMidi(getArgs(), symbols(), name()),
+  }, '⬇ MIDI');
 }
 
 export interface CardOptions {
@@ -94,6 +126,7 @@ export interface CardOptions {
   key: Key;
   style: VoicingStyle;
   pattern: Pattern;
+  genre?: GenreId;
   bars?: number[];
   badges?: (string | HTMLElement)[];
   meta?: HTMLElement | null;
@@ -116,7 +149,7 @@ export function progressionCard(o: CardOptions): HTMLElement {
     diagrams,
     o.meta ?? null,
     h('footer', null,
-      playButton(() => ({ voicings, bars: o.bars ?? o.chords.map(() => 1), pattern: o.pattern }), highlight),
+      playButton(() => ({ voicings, bars: o.bars ?? o.chords.map(() => 1), pattern: o.pattern, instrument: instrumentFor(o.genre) }), highlight),
       h('a', { class: 'btn primary', href: o.href }, 'Analizza e varia →')));
 }
 

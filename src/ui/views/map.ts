@@ -1,8 +1,8 @@
 import { h, segmented } from '../dom';
 import { keyControls } from '../components/controls';
-import { analyzeAll, pill, playButton, legend, type ChordItem } from '../components/progression';
+import { analyzeAll, pill, playButton, midiButton, legend, type ChordItem } from '../components/progression';
 import { circleOfFifths } from '../components/diagrams';
-import { context, currentKey, styleFor, patternFor } from '../state';
+import { context, currentKey, styleFor, patternFor, instrumentFor } from '../state';
 import { MODES, harmonize } from '../../theory/scales';
 import { formatRoman, skeletonToken, type RomanChord } from '../../theory/roman';
 import { suggestNext } from '../../theory/generator';
@@ -50,7 +50,7 @@ export function mapView(): HTMLElement {
       if (built.length >= 8) return;
       built = [...built, n];
       const it = analyzeAll([n], key)[0];
-      player.preview(voicingMidi(voiceProgression([it.chord], styleFor(context.genre))[0]));
+      void player.preview(voicingMidi(voiceProgression([it.chord], styleFor(context.genre))[0]), instrumentFor(context.genre));
       render();
     };
     const chordBtn = (n: string) => {
@@ -84,8 +84,10 @@ export function mapView(): HTMLElement {
       h('footer', null,
         built.length ? playButton(() => {
           const vs = voiceProgression(items.map((i) => i.chord), style);
-          return { voicings: vs, bars: built.map(() => 1), pattern: patternFor(context.genre) };
+          return { voicings: vs, bars: built.map(() => 1), pattern: patternFor(context.genre), instrument: instrumentFor(context.genre) };
         }, (i) => root.querySelectorAll('.built .pill').forEach((p, k) => p.classList.toggle('active', k === i))) : null,
+        built.length ? midiButton(() => ({ voicings: voiceProgression(items.map((i) => i.chord), style), bars: built.map(() => 1), pattern: patternFor(context.genre), instrument: instrumentFor(context.genre) }),
+          () => items.map((i) => i.symbol), () => 'La mia progressione') : null,
         built.length ? h('button', { type: 'button', class: 'btn', onclick: () => { built = built.slice(0, -1); render(); } }, '⌫ Annulla') : null,
         built.length ? h('button', { type: 'button', class: 'btn', onclick: () => { built = []; render(); } }, 'Svuota') : null,
         built.length >= 2 ? h('a', { class: 'btn primary', href: href('prog', { c: built.join(','), o: built.join(','), k: context.tonic, m: context.mode, g: context.genre }) }, 'Analizza e varia →') : null));
